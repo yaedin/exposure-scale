@@ -21,6 +21,15 @@ Goal of this stage: show that the idea works (adaptive onboarding, a quick sense
 - Tabs: Check (onboarding), Plan (lanes + time to baseline), All steps (catalog with filters).
 - Nine areas: accounts, devices, data already out there, money, voice & likeness, family & habits, data you give AI, AI acting for you, response. Organized by what's being protected; each step is tagged cyber, AI or both.
 
+## Agent skill
+`skills/exposure-scale/` is a terminal version for coding agents (Agent Skills standard: `SKILL.md` plus `scripts/`, `assets/`, `references/`).
+- `scripts/exposure.py` (Python 3.8+, standard library only) holds the logic: questions, plan, step help, read-only checks, state in `~/.exposure-scale/state.json`. The agent relays its output; `SKILL.md` sets the rules (never change settings, never handle secrets, follow the `Next:` line).
+- `assets/content.json` is a copy of the site's `content.json`; `tools/check_content.py` fails if they differ. Terminal-only help per step (how-to text, phone and computer instructions, settings deep links, templates) lives in `assets/assist.json`.
+- `node tools/compare_logic.mjs` checks that the script and `index.html` give the same questions, plan and links on random answers. Run it after changing logic in either.
+- `python3 skills/exposure-scale/scripts/exposure.py validate` checks `assist.json`, probes, templates and the `SKILL.md` header.
+- `evals/exposure-scale.json` holds scenarios to rerun on several models after changing `SKILL.md`.
+- Windows and Linux checks are untested.
+
 ## Checking content
 `python3 tools/check_content.py` checks that every id in `content.json` resolves and that every link responds. Sites that block scripts (FTC consumer pages, Facebook) are listed for a browser check. Links behind a sign-in only prove the page exists; whether they land on the right setting needs a signed-in check. Update `linksChecked` after a full pass.
 

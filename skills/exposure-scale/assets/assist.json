@@ -1,0 +1,184 @@
+{
+  "password_manager": {
+    "how": "Install one, import what your browser saved, then move email and bank first. Others follow as you log in."
+  },
+  "manager_report": {
+    "how": "Bitwarden: Reports → Vault health reports. 1Password: Watchtower. Proton Pass: Pass Monitor. Fix breached and reused entries first."
+  },
+  "browser_password_check": {
+    "how": "Chrome: Password Manager → Checkup. Safari or iCloud Keychain: Passwords app → Security. Fix what's flagged as compromised or reused."
+  },
+  "unique_passwords": {
+    "how": "Generate a new random password for your main email, then your bank, in your password manager. Email first: it resets the rest."
+  },
+  "email_second_factor": {
+    "how": "On the security page, add a passkey or an authenticator app. Save the backup codes it offers (see backup_codes)."
+  },
+  "email_no_sms": {
+    "how": "Once an app or passkey works, make it the default and remove text messages as a sign-in option where the provider allows."
+  },
+  "email_recovery": {
+    "how": "Remove recovery numbers and addresses you no longer control. Keep at least one current one."
+  },
+  "other_email_accounts": {
+    "how": "Repeat the second factor and recovery check on each other account. Work accounts: follow your employer's setup."
+  },
+  "security_key": {
+    "how": "Buy two FIDO2 keys (one spare). Register both on your main email, then other important accounts."
+  },
+  "carrier_pin": {
+    "how": "In your carrier's app or by phone, ask for a number-transfer or port-out PIN. Store it in your password manager."
+  },
+  "auto_updates": {
+    "phone": {
+      "ios": "Settings → General → Software Update → Automatic Updates: turn everything on.",
+      "android": "Settings → System → Software updates (names vary by maker): turn on automatic updates. Also Play Store → Settings → Auto-update apps."
+    },
+    "computer": {
+      "macos": "System Settings → General → Software Update → Automatic updates: turn everything on.",
+      "windows": "Settings → Windows Update → Advanced options: turn on getting updates as soon as they're available.",
+      "linux": "Turn on unattended upgrades (Debian/Ubuntu) or dnf-automatic (Fedora). Needs admin rights, so the user runs it."
+    },
+    "open": {
+      "macos": "x-apple.systempreferences:com.apple.Software-Update-Settings.extension",
+      "windows": "ms-settings:windowsupdate"
+    }
+  },
+  "screen_lock": {
+    "phone": {
+      "ios": "Settings → Face ID & Passcode (or Touch ID & Passcode): set a passcode of 6+ digits, then Settings → Display & Brightness → Auto-Lock: 1 minute.",
+      "android": "Settings → Security (or Security & privacy) → Screen lock: set a PIN or password, then add fingerprint or face unlock."
+    },
+    "computer": {
+      "macos": "System Settings → Lock Screen: require password immediately after sleep or screen saver.",
+      "windows": "Settings → Accounts → Sign-in options: set up Windows Hello, and require sign-in when you've been away.",
+      "linux": "Settings → Privacy → Screen Lock: turn on automatic screen lock."
+    },
+    "open": {
+      "macos": "x-apple.systempreferences:com.apple.Lock-Screen-Settings.extension",
+      "windows": "ms-settings:signinoptions"
+    }
+  },
+  "connected_apps": {
+    "how": "Remove anything you don't recognise or no longer use. Keep what you use weekly."
+  },
+  "lockdown_mode": {
+    "how": "Only for people likely to be targeted (journalists, activists, public figures). It breaks some features.",
+    "phone": {
+      "ios": "Settings → Privacy & Security → Lockdown Mode.",
+      "android": "Android 16 and later: Settings → Security & privacy → Advanced Protection."
+    },
+    "computer": {
+      "macos": "System Settings → Privacy & Security → Lockdown Mode."
+    },
+    "open": {
+      "macos": "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension"
+    }
+  },
+  "breach_check": {
+    "how": "Search each email address. For every breached site still in use, change that password."
+  },
+  "breach_alerts": {
+    "how": "Sign up with your main email address. Alerts come by email."
+  },
+  "people_search_removal": {
+    "how": "By hand: search your name on the big people-search sites and use each opt-out form. Or pay a removal service to repeat it."
+  },
+  "gdpr_erasure": {
+    "how": "Fill in the letter, then send it to each broker yourself. They have one month to reply.",
+    "template": "assets/templates/gdpr_erasure.md"
+  },
+  "google_results": {
+    "how": "Sign in, add your phone, address and email, and request removal of results that show them."
+  },
+  "credit_freeze": {
+    "how": "Freeze at Equifax, Experian and TransUnion, one at a time. Save each PIN or login in your password manager."
+  },
+  "transaction_alerts": {
+    "how": "In your banking app, turn on a notification for every card payment and transfer."
+  },
+  "bank_voice_id_off": {
+    "how": "Call the number on your card. Say: \"Please remove voice ID from my account and use a PIN or app approval instead.\""
+  },
+  "bank_sign_in": {
+    "how": "In your bank's app or website security settings, switch sign-in approval from text codes to the app or a passkey."
+  },
+  "voicemail_greeting": {
+    "phone": {
+      "ios": "Phone → Voicemail → Greeting → Default.",
+      "android": "Phone app → Settings → Voicemail → Greeting (varies by carrier): pick the default."
+    }
+  },
+  "voice_inventory": {
+    "how": "List every place your voice is public: videos, podcasts, talks, social posts, voice notes in public groups.",
+    "template": "assets/templates/voice_inventory.md"
+  },
+  "voice_audience": {
+    "how": "Go through the list and set each item to private, friends only, or delete it if it isn't needed."
+  },
+  "youtube_likeness": {
+    "how": "In YouTube Studio, find likeness detection under content detection. It needs ID and a selfie."
+  },
+  "likeness_monitoring": {
+    "how": "Create an account and add reference photos. It alerts you when your face shows up elsewhere."
+  },
+  "safe_word": {
+    "how": "Pick a word no one could guess from social media. Share it in person or by call, not in a group chat.",
+    "template": "assets/templates/family_message.md"
+  },
+  "callback_rule": {
+    "how": "Agree: any money request by phone gets a hang-up and a call back on a saved number.",
+    "template": "assets/templates/family_message.md"
+  },
+  "brief_relatives": {
+    "how": "A short call works best. Cover the safe word and the callback rule.",
+    "template": "assets/templates/family_message.md"
+  },
+  "training_off_chatgpt": {
+    "how": "Settings → Data controls → Improve the model for everyone: off."
+  },
+  "training_off_claude": {
+    "how": "Settings → Privacy → Help improve Claude: off."
+  },
+  "activity_off_gemini": {
+    "how": "On the Gemini activity page, turn activity saving off. Delete past activity if you want."
+  },
+  "training_off_copilot": {
+    "how": "Profile → Privacy → Model training on text: off. Also voice, if shown."
+  },
+  "meta_ai_settings": {
+    "how": "In the Privacy Center, find AI at Meta. In the EU or UK, submit the objection form. Elsewhere, make posts you don't want used private."
+  },
+  "training_off_linkedin": {
+    "how": "Settings → Data privacy → Data for Generative AI Improvement: off."
+  },
+  "training_off_github": {
+    "how": "Settings → Copilot: turn off allowing GitHub to use your data for product improvements and training."
+  },
+  "assistant_memory": {
+    "how": "Open each assistant's memory or personalization settings. Delete anything you wouldn't want stored: health, money, other people."
+  },
+  "agent_inventory": {
+    "review": "Run the check, then go through each tool with the user: what can it read, run, send or buy? Note anything they didn't know about."
+  },
+  "agent_confirm": {
+    "how": "Keep approval prompts on for sending, paying and running commands. Avoid modes that skip all permission prompts.",
+    "review": "Run the check and point out any permissive mode or long allow list. Changing a tool's config file needs the user's OK on the exact change and a backup first."
+  },
+  "agent_revoke": {
+    "how": "Remove connected tools and account connections that haven't been used in a month.",
+    "review": "Run the check and go through the connected tools by name. Remove only what the user picks; back up the config file first."
+  },
+  "agent_banking": {
+    "how": "Use a separate browser profile for banking and never let an agent browse in it."
+  },
+  "backup_codes": {
+    "how": "Download or print backup codes for your main email. Keep them on paper or offline, away from your phone."
+  },
+  "fraud_reporting": {
+    "how": "Save the link as a bookmark, plus your bank's fraud phone number in your contacts."
+  },
+  "deepfake_takedown": {
+    "how": "StopNCII makes a fingerprint of the image on your device so platforms can block it. The image itself isn't uploaded."
+  }
+}

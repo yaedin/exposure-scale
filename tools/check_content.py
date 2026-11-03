@@ -1,9 +1,10 @@
-"""Check content.json: every id it references exists, and every link responds.
+"""Check content.json: every id it references exists, the skill's copy matches, and every link responds.
 
 Run from the repo root:  python3 tools/check_content.py
 Exits non-zero if a reference is broken or a link fails.
 """
 import json
+import subprocess
 import sys
 import urllib.error
 import urllib.parse
@@ -38,6 +39,14 @@ for q in content["questions"]:
             problems.append(f"question {q['id']}: condition on unknown question {cond['question']}")
     if q.get("optionsFrom") and q["optionsFrom"] not in questions:
         problems.append(f"question {q['id']}: options from unknown question {q['optionsFrom']}")
+
+# the skill ships its own copy of the content
+SKILL_COPY = "skills/exposure-scale/assets/content.json"
+if open(SKILL_COPY).read() != open("content.json").read():
+    problems.append(f"{SKILL_COPY} differs from content.json. Run: cp content.json {SKILL_COPY}")
+r = subprocess.run([sys.executable, "skills/exposure-scale/scripts/exposure.py", "validate"], capture_output=True, text=True)
+if r.returncode:
+    problems += [f"skill: {l}" for l in r.stdout.strip().splitlines()]
 
 # links
 urls = {}
