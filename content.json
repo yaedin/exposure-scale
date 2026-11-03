@@ -1,234 +1,129 @@
 {
   "linksChecked": "2026-11-03",
+  "intro": "AI can copy your voice, learn from what you share and act on your behalf. A few questions show where that leaves you and what to change first.",
 
   "areas": [
-    {"id": "accounts", "name": "Accounts"},
-    {"id": "devices", "name": "Devices"},
-    {"id": "exposed", "name": "Data already out there"},
-    {"id": "money", "name": "Money"},
-    {"id": "likeness", "name": "Voice & likeness"},
-    {"id": "family", "name": "Family & habits"},
-    {"id": "ai_data", "name": "Data you give AI"},
+    {"id": "family", "name": "People close to you"},
+    {"id": "likeness", "name": "Your voice and face"},
+    {"id": "ai_data", "name": "What you tell AI"},
     {"id": "ai_agents", "name": "AI acting for you"},
+    {"id": "work", "name": "Your work"},
+    {"id": "decisions", "name": "Decisions about you"},
     {"id": "response", "name": "If something happens"}
   ],
 
-  "emailProviders": {
-    "gmail": {
-      "name": "Gmail",
-      "security": {"label": "Google security", "url": "https://myaccount.google.com/security"},
-      "connectedApps": {"label": "Google connections", "url": "https://myaccount.google.com/connections"}
-    },
-    "outlook": {
-      "name": "Outlook / Hotmail",
-      "security": {"label": "Microsoft security", "url": "https://account.microsoft.com/security"},
-      "connectedApps": {"label": "Microsoft app access", "url": "https://account.live.com/consent/Manage"}
-    },
-    "icloud": {
-      "name": "iCloud",
-      "security": {"label": "Apple Account", "url": "https://account.apple.com"}
-    },
-    "proton": {
-      "name": "Proton",
-      "security": {"label": "Proton account", "url": "https://account.proton.me"}
-    }
-  },
-
   "steps": [
-    {"id": "password_manager", "area": "accounts", "title": "Start a password manager",
-     "minutes": 45, "impact": 3, "tier": 1, "kind": ["cyber"], "checkMethod": "self",
-     "links": [{"label": "Bitwarden", "url": "https://bitwarden.com"}, {"label": "1Password", "url": "https://1password.com"}]},
-    {"id": "manager_report", "area": "accounts", "title": "Run your password manager’s security report",
-     "minutes": 10, "impact": 3, "tier": 1, "kind": ["cyber"], "checkMethod": "auto"},
-    {"id": "browser_password_check", "area": "accounts", "title": "Run your browser’s password check",
-     "minutes": 10, "impact": 3, "tier": 1, "kind": ["cyber"], "checkMethod": "auto",
-     "links": [{"label": "Google Password Checkup", "url": "https://passwords.google.com"}]},
-    {"id": "unique_passwords", "area": "accounts", "title": "Give email and bank their own passwords",
-     "minutes": 15, "impact": 3, "tier": 1, "kind": ["cyber"], "checkMethod": "self"},
-    {"id": "email_second_factor", "area": "accounts", "title": "Add an authenticator or passkey to your main email",
-     "minutes": 10, "impact": 3, "tier": 1, "kind": ["cyber", "ai"], "checkMethod": "link",
-     "links": [{"emailProvider": "security"}]},
-    {"id": "email_no_sms", "area": "accounts", "title": "Swap text codes for app prompts or a passkey",
-     "minutes": 10, "impact": 2, "tier": 2, "kind": ["cyber"], "checkMethod": "link",
-     "links": [{"emailProvider": "security"}]},
-    {"id": "email_recovery", "area": "accounts", "title": "Check recovery phone and email",
-     "minutes": 5, "impact": 2, "tier": 1, "kind": ["cyber"], "checkMethod": "link",
-     "links": [{"emailProvider": "security"}]},
-    {"id": "other_email_accounts", "area": "accounts", "title": "Repeat sign-in protection on your other email accounts",
-     "minutes": 20, "impact": 2, "tier": 2, "kind": ["cyber"], "checkMethod": "link"},
-    {"id": "security_key", "area": "accounts", "title": "Add a hardware security key",
-     "minutes": 30, "impact": 2, "tier": 3, "kind": ["cyber"], "checkMethod": "link", "effortLabel": "Buy a key",
-     "links": [{"label": "Advanced Protection", "url": "https://landing.google.com/advancedprotection/"}]},
-    {"id": "carrier_pin", "area": "accounts", "title": "Set a port-out PIN with your carrier",
-     "minutes": 15, "impact": 2, "tier": 2, "kind": ["cyber"], "checkMethod": "self"},
-
-    {"id": "auto_updates", "area": "devices", "title": "Turn on automatic updates",
-     "minutes": 2, "impact": 3, "tier": 1, "kind": ["cyber"], "checkMethod": "auto"},
-    {"id": "screen_lock", "area": "devices", "title": "Screen lock with biometrics",
-     "minutes": 2, "impact": 3, "tier": 1, "kind": ["cyber"], "checkMethod": "auto"},
-    {"id": "connected_apps", "area": "devices", "title": "Remove old apps with access to your account",
-     "minutes": 10, "impact": 2, "tier": 2, "kind": ["cyber"], "checkMethod": "link",
-     "links": [{"emailProvider": "connectedApps"}]},
-    {"id": "lockdown_mode", "area": "devices", "title": "Lockdown Mode or Advanced Protection",
-     "minutes": 5, "impact": 1, "tier": 3, "kind": ["cyber"], "checkMethod": "link",
-     "links": [{"label": "Apple guide", "url": "https://support.apple.com/en-us/105120", "showIf": {"question": "phone", "notEquals": "android"}}]},
-
-    {"id": "breach_check", "area": "exposed", "title": "Check your emails on Have I Been Pwned",
-     "minutes": 3, "impact": 2, "tier": 1, "kind": ["cyber"], "checkMethod": "auto",
-     "links": [{"label": "Have I Been Pwned", "url": "https://haveibeenpwned.com"}]},
-    {"id": "breach_alerts", "area": "exposed", "title": "Turn on breach alerts",
-     "minutes": 3, "impact": 1, "tier": 2, "kind": ["cyber"], "checkMethod": "auto",
-     "links": [{"label": "Mozilla Monitor", "url": "https://monitor.mozilla.org"}]},
-    {"id": "people_search_removal", "area": "exposed", "title": "Remove yourself from people-search sites",
-     "minutes": 120, "impact": 2, "tier": 2, "kind": ["cyber", "ai"], "checkMethod": "auto", "effortLabel": "Hours or a subscription",
-     "links": [{"label": "Optery", "url": "https://www.optery.com"}, {"label": "Incogni", "url": "https://incogni.com"}]},
-    {"id": "gdpr_erasure", "area": "exposed", "title": "Send GDPR erasure requests to data brokers",
-     "minutes": 60, "impact": 2, "tier": 2, "kind": ["cyber", "ai"], "checkMethod": "link",
-     "links": [{"label": "datarequests.org", "url": "https://www.datarequests.org"}]},
-    {"id": "google_results", "area": "exposed", "title": "Remove your contact details from Google results",
-     "minutes": 10, "impact": 1, "tier": 3, "kind": ["cyber"], "checkMethod": "link",
-     "links": [{"label": "Results about you", "url": "https://myactivity.google.com/results-about-you"}]},
-
-    {"id": "credit_freeze", "area": "money", "title": "Freeze your credit at all three bureaus",
-     "minutes": 30, "impact": 3, "tier": 1, "kind": ["cyber"], "checkMethod": "link",
-     "links": [{"label": "FTC guide", "url": "https://consumer.ftc.gov/articles/credit-freezes-and-fraud-alerts"}]},
-    {"id": "transaction_alerts", "area": "money", "title": "Turn on transaction alerts",
-     "minutes": 5, "impact": 2, "tier": 1, "kind": ["cyber"], "checkMethod": "self"},
-    {"id": "bank_voice_id_off", "area": "money", "title": "Ask your bank to switch off voice ID",
-     "minutes": 15, "impact": 3, "tier": 1, "kind": ["ai"], "checkMethod": "self"},
-    {"id": "bank_sign_in", "area": "money", "title": "Use app or key sign-in at your bank",
-     "minutes": 10, "impact": 2, "tier": 2, "kind": ["cyber"], "checkMethod": "self"},
-
+    {"id": "safe_word", "area": "family", "title": "Agree a family safe word",
+     "minutes": 10, "impact": 3, "tier": 1, "checkMethod": "self", "withOthers": true},
+    {"id": "callback_rule", "area": "family", "title": "Agree a callback rule for money requests",
+     "minutes": 5, "impact": 3, "tier": 1, "checkMethod": "self", "withOthers": true},
+    {"id": "brief_relatives", "area": "family", "title": "Brief older relatives",
+     "minutes": 30, "impact": 2, "tier": 2, "checkMethod": "self", "withOthers": true},
+    {"id": "teen_controls", "area": "family", "title": "Set up teen controls on the chatbots they use",
+     "minutes": 15, "impact": 2, "tier": 1, "checkMethod": "link",
+     "links": [{"label": "ChatGPT parental controls", "url": "https://help.openai.com/en/articles/12315553"}, {"label": "Snapchat My AI", "url": "https://help.snapchat.com/hc/en-us/articles/22628526282772"}, {"label": "Gemini in Family Link", "url": "https://support.google.com/gemini/answer/16109150"}]},
+    {"id": "teen_talk", "area": "family", "title": "Talk with them about AI companions",
+     "minutes": 20, "impact": 2, "tier": 2, "checkMethod": "self", "withOthers": true,
+     "links": [{"label": "Common Sense guide", "url": "https://www.commonsensemedia.org/articles/parents-ultimate-guide-to-ai-companions-and-relationships"}]},
+    {"id": "bank_voice_id_off", "area": "likeness", "title": "Ask your bank to switch off voice ID",
+     "minutes": 15, "impact": 3, "tier": 1, "checkMethod": "self", "withOthers": true},
     {"id": "voicemail_greeting", "area": "likeness", "title": "Switch your voicemail greeting to the default",
-     "minutes": 2, "impact": 1, "tier": 2, "kind": ["ai"], "checkMethod": "self"},
+     "minutes": 2, "impact": 1, "tier": 2, "checkMethod": "self"},
     {"id": "voice_inventory", "area": "likeness", "title": "List where your voice is public",
-     "minutes": 15, "impact": 1, "tier": 2, "kind": ["ai"], "checkMethod": "self"},
+     "minutes": 15, "impact": 1, "tier": 2, "checkMethod": "self"},
     {"id": "voice_audience", "area": "likeness", "title": "Limit who sees videos with your voice",
-     "minutes": 30, "impact": 2, "tier": 2, "kind": ["ai"], "checkMethod": "self"},
+     "minutes": 30, "impact": 2, "tier": 2, "checkMethod": "self"},
     {"id": "youtube_likeness", "area": "likeness", "title": "Turn on YouTube likeness detection",
-     "minutes": 15, "impact": 2, "tier": 3, "kind": ["ai"], "checkMethod": "auto",
+     "minutes": 15, "impact": 2, "tier": 3, "checkMethod": "auto",
      "links": [{"label": "YouTube Studio", "url": "https://studio.youtube.com"}]},
     {"id": "likeness_monitoring", "area": "likeness", "title": "Set up likeness monitoring across the web",
-     "minutes": 15, "impact": 1, "tier": 3, "kind": ["ai"], "checkMethod": "auto",
+     "minutes": 15, "impact": 1, "tier": 3, "checkMethod": "auto",
      "links": [{"label": "Loti", "url": "https://lotiai.com"}]},
-
-    {"id": "safe_word", "area": "family", "title": "Agree a family safe word",
-     "minutes": 10, "impact": 3, "tier": 1, "kind": ["ai"], "checkMethod": "self"},
-    {"id": "callback_rule", "area": "family", "title": "Agree a callback rule for money requests",
-     "minutes": 5, "impact": 3, "tier": 1, "kind": ["cyber", "ai"], "checkMethod": "self"},
-    {"id": "brief_relatives", "area": "family", "title": "Brief older relatives",
-     "minutes": 30, "impact": 2, "tier": 2, "kind": ["ai"], "checkMethod": "self"},
-
+    {"id": "face_search_optout", "area": "likeness", "title": "Opt out of face search engines",
+     "minutes": 20, "impact": 1, "tier": 3, "checkMethod": "link",
+     "links": [{"label": "PimEyes opt-out", "url": "https://pimeyes.com/en/opt-out"}]},
     {"id": "training_off_chatgpt", "area": "ai_data", "title": "Turn off training in ChatGPT",
-     "minutes": 2, "impact": 1, "tier": 1, "kind": ["ai"], "checkMethod": "link",
+     "minutes": 2, "impact": 1, "tier": 1, "checkMethod": "link",
      "links": [{"label": "ChatGPT settings", "url": "https://chatgpt.com/#settings/DataControls"}]},
     {"id": "training_off_claude", "area": "ai_data", "title": "Turn off training in Claude",
-     "minutes": 2, "impact": 1, "tier": 1, "kind": ["ai"], "checkMethod": "link",
+     "minutes": 2, "impact": 1, "tier": 1, "checkMethod": "link",
      "links": [{"label": "Claude settings", "url": "https://claude.ai/settings/data-privacy-controls"}]},
     {"id": "activity_off_gemini", "area": "ai_data", "title": "Turn off Gemini activity",
-     "minutes": 2, "impact": 1, "tier": 1, "kind": ["ai"], "checkMethod": "link",
+     "minutes": 2, "impact": 1, "tier": 1, "checkMethod": "link",
      "links": [{"label": "Gemini activity", "url": "https://myactivity.google.com/product/gemini"}]},
     {"id": "training_off_copilot", "area": "ai_data", "title": "Turn off training in Microsoft Copilot",
-     "minutes": 2, "impact": 1, "tier": 1, "kind": ["ai"], "checkMethod": "link",
+     "minutes": 2, "impact": 1, "tier": 1, "checkMethod": "link",
      "links": [{"label": "Copilot", "url": "https://copilot.microsoft.com"}]},
     {"id": "meta_ai_settings", "area": "ai_data", "title": "Check Meta AI training settings",
-     "minutes": 5, "impact": 1, "tier": 2, "kind": ["ai"], "checkMethod": "link",
+     "minutes": 5, "impact": 1, "tier": 2, "checkMethod": "link",
      "links": [{"label": "Meta Privacy Center", "url": "https://www.facebook.com/privacy/center/"}]},
     {"id": "training_off_linkedin", "area": "ai_data", "title": "Turn off LinkedIn AI training",
-     "minutes": 2, "impact": 1, "tier": 1, "kind": ["ai"], "checkMethod": "link",
+     "minutes": 2, "impact": 1, "tier": 1, "checkMethod": "link",
      "links": [{"label": "LinkedIn setting", "url": "https://www.linkedin.com/mypreferences/d/settings/data-for-ai-improvement"}]},
     {"id": "training_off_github", "area": "ai_data", "title": "Turn off GitHub Copilot training",
-     "minutes": 2, "impact": 1, "tier": 2, "kind": ["ai"], "checkMethod": "link",
+     "minutes": 2, "impact": 1, "tier": 2, "checkMethod": "link",
      "links": [{"label": "Copilot settings", "url": "https://github.com/settings/copilot"}]},
+    {"id": "training_off_x", "area": "ai_data", "title": "Turn off Grok training on X",
+     "minutes": 2, "impact": 1, "tier": 1, "checkMethod": "link",
+     "links": [{"label": "X Grok setting", "url": "https://x.com/settings/grok_settings"}]},
     {"id": "assistant_memory", "area": "ai_data", "title": "Review what your assistants remember",
-     "minutes": 10, "impact": 1, "tier": 2, "kind": ["ai"], "checkMethod": "self"},
-
+     "minutes": 10, "impact": 1, "tier": 2, "checkMethod": "self"},
+    {"id": "push_back", "area": "ai_data", "title": "Tell your assistant to argue the other side",
+     "minutes": 5, "impact": 2, "tier": 1, "checkMethod": "link",
+     "links": [{"label": "ChatGPT personalization", "url": "https://chatgpt.com/#settings/Personalization"}, {"label": "Claude preferences", "url": "https://claude.ai/settings/profile"}]},
     {"id": "agent_inventory", "area": "ai_agents", "title": "List what each agent can reach",
-     "minutes": 10, "impact": 2, "tier": 1, "kind": ["ai"], "checkMethod": "self"},
+     "minutes": 10, "impact": 2, "tier": 1, "checkMethod": "self",
+     "agentHelp": "The skill reads what Claude Code, Codex, Gemini CLI or Cursor can reach on this computer and goes through it with you."},
     {"id": "agent_confirm", "area": "ai_agents", "title": "Require a confirm before agents send or pay",
-     "minutes": 5, "impact": 3, "tier": 1, "kind": ["cyber", "ai"], "checkMethod": "self"},
+     "minutes": 5, "impact": 3, "tier": 1, "checkMethod": "self",
+     "agentHelp": "The skill flags agents on this computer that skip approval prompts or have long allow lists."},
     {"id": "agent_revoke", "area": "ai_agents", "title": "Revoke agent connections you don’t use",
-     "minutes": 10, "impact": 2, "tier": 2, "kind": ["ai"], "checkMethod": "link",
-     "links": [{"emailProvider": "connectedApps"}]},
+     "minutes": 10, "impact": 2, "tier": 2, "checkMethod": "link",
+     "links": [{"label": "Google connections", "url": "https://myaccount.google.com/connections"}, {"label": "Microsoft app access", "url": "https://account.live.com/consent/Manage"}]},
     {"id": "agent_banking", "area": "ai_agents", "title": "Keep agents out of banking sessions",
-     "minutes": 5, "impact": 2, "tier": 2, "kind": ["cyber", "ai"], "checkMethod": "self"},
-
-    {"id": "backup_codes", "area": "response", "title": "Store backup codes offline",
-     "minutes": 10, "impact": 2, "tier": 2, "kind": ["cyber"], "checkMethod": "self"},
+     "minutes": 5, "impact": 2, "tier": 2, "checkMethod": "self"},
+    {"id": "art_optout", "area": "work", "title": "Opt your art and photos out of AI training",
+     "minutes": 15, "impact": 1, "tier": 2, "checkMethod": "link",
+     "links": [{"label": "Adobe privacy", "url": "https://account.adobe.com/privacy"}, {"label": "DeviantArt opt-out", "url": "https://www.deviantart.com/team/journal/A-New-Standard-for-Opting-Out-of-AI-Datasets-934500371"}]},
+    {"id": "block_ai_crawlers", "area": "work", "title": "Block AI crawlers on your website",
+     "minutes": 15, "impact": 2, "tier": 2, "checkMethod": "auto",
+     "links": [{"label": "Squarespace", "url": "https://support.squarespace.com/hc/en-us/articles/360022347072"}, {"label": "Wix", "url": "https://support.wix.com/en/article/blocking-ai-crawlers-from-your-site"}, {"label": "Cloudflare", "url": "https://developers.cloudflare.com/bots/additional-configurations/block-ai-bots/"}],
+     "agentHelp": "The skill adds the crawler rules to your site’s robots.txt with you."},
+    {"id": "human_review_right", "area": "decisions", "title": "Know your right to a human review",
+     "minutes": 5, "impact": 1, "tier": 2, "checkMethod": "link",
+     "links": [{"label": "EDPB: your rights", "url": "https://www.edpb.europa.eu/sme/be-compliant/respect-individuals-rights_en", "showIf": {"question": "country", "equals": "eu"}}, {"label": "ICO: decisions without people", "url": "https://ico.org.uk/for-the-public/your-rights-relating-to-decisions-being-made-about-you-without-human-involvement/", "showIf": {"question": "country", "equals": "uk"}}, {"label": "California privacy agency", "url": "https://cppa.ca.gov/", "showIf": {"question": "country", "equals": "us"}}]},
+    {"id": "ask_explanation", "area": "decisions", "title": "Ask how a decision about you was made",
+     "minutes": 30, "impact": 2, "tier": 2, "checkMethod": "self", "withOthers": true,
+     "links": [{"label": "EDPB: your rights", "url": "https://www.edpb.europa.eu/sme/be-compliant/respect-individuals-rights_en", "showIf": {"question": "country", "equals": "eu"}}, {"label": "ICO: decisions without people", "url": "https://ico.org.uk/for-the-public/your-rights-relating-to-decisions-being-made-about-you-without-human-involvement/", "showIf": {"question": "country", "equals": "uk"}}],
+     "agentHelp": "The skill drafts the request with you. You send it."},
     {"id": "fraud_reporting", "area": "response", "title": "Bookmark where to report fraud",
-     "minutes": 2, "impact": 1, "tier": 2, "kind": ["cyber", "ai"], "checkMethod": "link",
-     "links": [{"label": "FTC", "url": "https://reportfraud.ftc.gov", "showIf": {"question": "country", "equals": "us"}},
-               {"label": "Europol links", "url": "https://www.europol.europa.eu/report-a-crime/report-cybercrime-online", "showIf": {"question": "country", "notEquals": "us"}}]},
+     "minutes": 2, "impact": 1, "tier": 2, "checkMethod": "link",
+     "links": [{"label": "FTC", "url": "https://reportfraud.ftc.gov", "showIf": {"question": "country", "equals": "us"}}, {"label": "Europol links", "url": "https://www.europol.europa.eu/report-a-crime/report-cybercrime-online", "showIf": {"question": "country", "notEquals": "us"}}]},
     {"id": "deepfake_takedown", "area": "response", "title": "Know the deepfake takedown routes",
-     "minutes": 3, "impact": 1, "tier": 3, "kind": ["ai"], "checkMethod": "link",
-     "links": [{"label": "StopNCII", "url": "https://stopncii.org"},
-               {"label": "FTC Take It Down", "url": "https://takeitdown.ftc.gov", "showIf": {"question": "country", "equals": "us"}}]}
+     "minutes": 3, "impact": 1, "tier": 3, "checkMethod": "link",
+     "links": [{"label": "StopNCII", "url": "https://stopncii.org"}, {"label": "FTC Take It Down", "url": "https://takeitdown.ftc.gov", "showIf": {"question": "country", "equals": "us"}}]}
   ],
 
   "questions": [
-    {"id": "passwords", "label": "Passwords", "text": "How do you keep track of your passwords?", "options": [
-      {"value": "manager", "label": "A password manager", "detail": "Bitwarden, 1Password, Proton Pass…", "note": "Good base.", "done": ["password_manager"]},
-      {"value": "browser", "label": "My browser or phone saves them", "detail": "Chrome, Safari, iCloud Keychain…", "note": "That counts as a password manager.", "done": ["password_manager"], "add": ["browser_password_check"]},
-      {"value": "reuse", "label": "A few I reuse", "note": "Most common. Start with email and bank, not everything at once.", "add": ["unique_passwords", "password_manager"]},
-      {"value": "paper", "label": "Written down at home", "note": "Safer than reuse. A manager adds breach checks.", "add": ["password_manager"]}
-    ]},
-    {"id": "report_last_opened", "label": "Security report", "text": "When did you last open its security report?",
-     "showIf": {"question": "passwords", "equals": "manager"}, "options": [
-      {"value": "recent", "label": "Recently, it’s clean", "done": ["manager_report"]},
-      {"value": "old", "label": "A while ago", "add": ["manager_report"]},
-      {"value": "never", "label": "Didn’t know it had one", "note": "Most do. It lists breached and reused passwords.", "add": ["manager_report"]}
-    ]},
-    {"id": "email_accounts", "label": "Email accounts", "text": "Which email accounts do you use?", "hint": "Pick all that apply.", "multi": true,
-     "effects": [
-      {"add": ["breach_check", "breach_alerts"]},
-      {"if": {"question": "email_accounts", "minCount": 2}, "add": ["other_email_accounts"]}
-     ], "options": [
-      {"value": "gmail", "label": "Gmail"},
-      {"value": "outlook", "label": "Outlook or Hotmail"},
-      {"value": "icloud", "label": "iCloud"},
-      {"value": "proton", "label": "Proton"},
-      {"value": "work", "label": "Work or school"},
-      {"value": "other", "label": "Something else", "detail": "Own domain, GMX, Yahoo…"}
-    ]},
-    {"id": "main_email", "label": "Main email", "text": "Which one gets your password-reset emails?", "hint": "That one matters most.",
-     "showIf": {"question": "email_accounts", "minCount": 2}, "optionsFrom": "email_accounts"},
-    {"id": "email_sign_in", "label": "Email sign-in", "text": "How do you sign in to {mainEmail}?", "options": [
-      {"value": "password", "label": "Just a password", "note": "The single biggest gap. Ten minutes.", "add": ["email_second_factor", "email_recovery"]},
-      {"value": "sms", "label": "Password, then a text message code", "note": "Better. An app prompt is stronger.", "done": ["email_second_factor"], "add": ["email_no_sms", "email_recovery"]},
-      {"value": "app", "label": "Password, then an app or phone prompt", "note": "Solid.", "done": ["email_second_factor", "email_no_sms"], "add": ["email_recovery"]},
-      {"value": "passkey", "label": "Passkey or security key", "note": "Best there is.", "done": ["email_second_factor", "email_no_sms", "security_key", "email_recovery"]},
-      {"value": "not_sure", "label": "Not sure", "note": "The security page shows it.", "add": ["email_second_factor", "email_recovery"]}
-    ]},
-    {"id": "phone", "label": "Phone", "text": "Which phone do you use?",
-     "effects": [{"add": ["lockdown_mode"]}], "options": [
-      {"value": "ios", "label": "iPhone"},
-      {"value": "android", "label": "Android"},
-      {"value": "both", "label": "Both"}
-    ]},
-    {"id": "updates", "label": "Updates", "text": "When your phone offers an update, you…", "options": [
-      {"value": "auto", "label": "Never see it, it installs itself", "done": ["auto_updates"]},
-      {"value": "later", "label": "Tap “Later” a lot", "note": "Two minutes to switch on.", "add": ["auto_updates"]},
-      {"value": "not_sure", "label": "Not sure", "add": ["auto_updates"]}
-    ]},
-    {"id": "country", "label": "Country", "text": "Where do you live?", "hint": "Laws and tools differ.", "options": [
-      {"value": "eu", "label": "EU", "note": "GDPR gives you deletion rights.", "add": ["gdpr_erasure", "fraud_reporting"]},
-      {"value": "uk", "label": "UK", "add": ["gdpr_erasure", "fraud_reporting"]},
-      {"value": "us", "label": "US", "note": "A credit freeze is the biggest lever.", "add": ["credit_freeze", "people_search_removal", "fraud_reporting", "deepfake_takedown"]},
-      {"value": "elsewhere", "label": "Elsewhere", "add": ["fraud_reporting"]}
-    ]},
-    {"id": "bank_voice_id", "label": "Bank voice ID", "text": "Has your bank ever recognised you by voice?", "hint": "“My voice is my password” or similar.", "options": [
-      {"value": "yes", "label": "Yes, I use voice ID", "note": "Cloned voices have passed these checks. One call turns it off.", "add": ["bank_voice_id_off", "transaction_alerts"]},
-      {"value": "no", "label": "No", "done": ["bank_voice_id_off"], "add": ["transaction_alerts"]},
-      {"value": "not_sure", "label": "Not sure", "note": "Ask next time you call.", "add": ["bank_voice_id_off", "transaction_alerts"]}
-    ]},
     {"id": "panic_call", "label": "Panicked call", "text": "Someone close calls in a panic, in their voice, asking for money now. What happens?", "options": [
       {"value": "safe_word", "label": "I ask for our safe word", "done": ["safe_word", "callback_rule"]},
       {"value": "call_back", "label": "I hang up and call them back", "note": "Good instinct. A safe word makes it automatic.", "done": ["callback_rule"], "add": ["safe_word"]},
       {"value": "send_money", "label": "Honestly, I’d probably help", "note": "Most people would. Ten minutes fixes it.", "add": ["safe_word", "callback_rule", "brief_relatives"]}
     ]},
+    {"id": "teens", "label": "Teenagers", "text": "Do teenagers in your life use AI chatbots or companion apps?", "hint": "ChatGPT, Snapchat’s My AI, Gemini, companion apps…", "options": [
+      {"value": "mine", "label": "Yes, my own kids", "note": "72% of US teens have used an AI companion. Controls take fifteen minutes.", "add": ["teen_controls", "teen_talk"]},
+      {"value": "family", "label": "Yes, others in the family", "add": ["teen_talk"]},
+      {"value": "not_sure", "label": "Not sure", "note": "Worth asking. 72% of US teens have used one.", "add": ["teen_talk"]},
+      {"value": "no", "label": "No teenagers around me"}
+    ]},
+    {"id": "bank_voice_id", "label": "Bank voice ID", "text": "Has your bank ever recognised you by voice?", "hint": "“My voice is my password” or similar.", "options": [
+      {"value": "yes", "label": "Yes, I use voice ID", "note": "Cloned voices have passed these checks. One call turns it off.", "add": ["bank_voice_id_off"]},
+      {"value": "no", "label": "No", "done": ["bank_voice_id_off"]},
+      {"value": "not_sure", "label": "Not sure", "note": "Ask next time you call.", "add": ["bank_voice_id_off"]}
+    ]},
     {"id": "public_media", "label": "Voice & face online", "text": "How much of your voice and face is online?", "options": [
-      {"value": "lots", "label": "Videos or podcasts with my voice", "add": ["voice_inventory", "voice_audience", "voicemail_greeting", "likeness_monitoring"]},
-      {"value": "photos", "label": "Mostly photos", "add": ["voicemail_greeting", "likeness_monitoring"]},
+      {"value": "lots", "label": "Videos or podcasts with my voice", "add": ["voice_inventory", "voice_audience", "voicemail_greeting", "likeness_monitoring", "face_search_optout", "deepfake_takedown"]},
+      {"value": "photos", "label": "Mostly photos", "add": ["voicemail_greeting", "likeness_monitoring", "face_search_optout", "deepfake_takedown"]},
       {"value": "little", "label": "Barely anything", "note": "Your voicemail greeting may still be your voice.", "add": ["voicemail_greeting"]}
     ]},
     {"id": "ai_assistants", "label": "AI assistants", "text": "Which AI assistants do you use?", "hint": "Pick all that apply.", "multi": true,
@@ -240,18 +135,38 @@
       {"value": "meta", "label": "Meta AI", "add": ["meta_ai_settings"]},
       {"value": "none", "label": "None", "exclusive": true}
     ]},
+    {"id": "ai_advice", "label": "Personal advice", "text": "Do you ask them for advice on personal things?", "hint": "Relationships, health, money, an argument with someone.",
+     "showIf": {"question": "ai_assistants", "minCount": 1}, "options": [
+      {"value": "often", "label": "Often", "note": "Chatbots back the user about 50% more often than people do. One instruction helps.", "add": ["push_back"]},
+      {"value": "sometimes", "label": "Sometimes", "add": ["push_back"]},
+      {"value": "no", "label": "No, mostly work or facts"}
+    ]},
     {"id": "ai_agents", "label": "AI acting for you", "text": "Do any of them act for you?",
      "showIf": {"question": "ai_assistants", "minCount": 1}, "options": [
       {"value": "chat", "label": "No, I just chat"},
       {"value": "read", "label": "They read my email or files", "add": ["agent_inventory", "agent_revoke"]},
       {"value": "act", "label": "They browse, book or buy", "note": "The newest risk. Two settings matter most.", "add": ["agent_inventory", "agent_confirm", "agent_banking", "agent_revoke"]}
     ]},
-    {"id": "platforms", "label": "Platforms", "text": "Where else are you?", "hint": "Pick all that apply.", "multi": true, "options": [
+    {"id": "platforms", "label": "Where you post", "text": "Where do you post?", "hint": "Pick all that apply.", "multi": true, "options": [
       {"value": "linkedin", "label": "LinkedIn", "add": ["training_off_linkedin"]},
       {"value": "meta", "label": "Facebook or Instagram", "add": ["meta_ai_settings"]},
+      {"value": "x", "label": "X", "add": ["training_off_x"]},
       {"value": "youtube", "label": "My own YouTube channel", "add": ["youtube_likeness"]},
       {"value": "github", "label": "GitHub", "add": ["training_off_github"]},
+      {"value": "art", "label": "Art or photo sites", "detail": "DeviantArt, ArtStation, Flickr…", "add": ["art_optout"]},
+      {"value": "website", "label": "My own website or blog", "add": ["block_ai_crawlers"]},
       {"value": "none", "label": "None of these", "exclusive": true}
+    ]},
+    {"id": "decisions", "label": "Automated decisions", "text": "Has a company turned you down lately without a clear reason?", "hint": "A loan, an insurance claim, a job, an account.", "options": [
+      {"value": "yes", "label": "Yes", "note": "You can ask how it was decided, and in some places for a person to look again.", "add": ["ask_explanation", "human_review_right"]},
+      {"value": "applying", "label": "No, but I’m applying for something now", "add": ["human_review_right"]},
+      {"value": "no", "label": "No"}
+    ]},
+    {"id": "country", "label": "Country", "text": "Where do you live?", "hint": "Rights and reporting routes differ.", "options": [
+      {"value": "eu", "label": "EU", "add": ["fraud_reporting"]},
+      {"value": "uk", "label": "UK", "add": ["fraud_reporting"]},
+      {"value": "us", "label": "US", "add": ["fraud_reporting", "deepfake_takedown"]},
+      {"value": "elsewhere", "label": "Elsewhere", "add": ["fraud_reporting"]}
     ]}
   ]
 }

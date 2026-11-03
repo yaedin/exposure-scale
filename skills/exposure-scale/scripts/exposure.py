@@ -36,7 +36,6 @@ STEPS = CONTENT["steps"]
 QUESTIONS = CONTENT["questions"]
 STEP = {s["id"]: s for s in STEPS}
 QUESTION = {q["id"]: q for q in QUESTIONS}
-EMAIL = CONTENT["emailProviders"]
 SCRIPT = "exposure.py"
 
 OS = {"Darwin": "macos", "Windows": "windows", "Linux": "linux"}.get(platform.system(), "other")
@@ -91,30 +90,12 @@ def meets(c, a):
     return True
 
 
-def main_email(a):
-    m = a.get("email_accounts")
-    return a.get("main_email") or (m[0] if isinstance(m, list) and len(m) == 1 else None)
-
-
 def visible(a):
     return [q for q in QUESTIONS if meets(q.get("showIf"), a)]
 
 
-def question_text(q, a):
-    p = EMAIL.get(main_email(a)) or {}
-    return q["text"].replace("{mainEmail}", p.get("name", "your main email"), 1)
-
-
 def links_of(s, a):
-    out = []
-    for l in s.get("links", []):
-        if "emailProvider" in l:
-            link = (EMAIL.get(main_email(a)) or {}).get(l["emailProvider"])
-            if link:
-                out.append(link)
-        elif meets(l.get("showIf"), a):
-            out.append(l)
-    return out
+    return [l for l in s.get("links", []) if meets(l.get("showIf"), a)]
 
 
 def effects_of(q, ans, a):
@@ -151,12 +132,12 @@ def current(a):
     return next((q for q in visible(a) if q["id"] not in a), None)
 
 
-# Effort lanes: 10 min or less → Minutes, up to 60 → An evening, longer or with an effortLabel → Bigger
-LANES = [("minutes", "Minutes", "10 min or less each"), ("evening", "An evening", "up to an hour"), ("bigger", "Bigger", "purchases, calls or ongoing")]
+# Lanes: steps that need someone else → With others; on your own, 10 min or less → Minutes, longer → An evening
+LANES = [("minutes", "Minutes", "10 min or less, on your own"), ("evening", "An evening", "longer, on your own"), ("others", "With others", "needs family, your bank or a company")]
 
 
 def lane(s):
-    return "bigger" if s.get("effortLabel") or s["minutes"] > 60 else "minutes" if s["minutes"] <= 10 else "evening"
+    return "others" if s.get("withOthers") else "minutes" if s["minutes"] <= 10 else "evening"
 
 
 def order(steps):
@@ -170,16 +151,12 @@ def fmt(m):
     return f"{m // 60} h" + (f" {m % 60} min" if m % 60 else "")
 
 
-def kind(s):
-    return "Cyber + AI" if len(s["kind"]) > 1 else "AI" if s["kind"][0] == "ai" else "Cyber"
-
-
 def dots(n):
     return "●" * n + "○" * (3 - n)
 
 
 def effort(s):
-    return s.get("effortLabel") or fmt(s["minutes"])
+    return fmt(s["minutes"])
 
 
 def ans_text(q, ans, a):
@@ -204,96 +181,6 @@ def help_kinds(sid):
 
 
 # ===== read-only checks on this computer =====
-def run(cmd, timeout=10):
-    """Run a read-only command. Returns combined output, or None if it can't run."""
-    try:
-        r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
-    except (OSError, subprocess.SubprocessError):
-        return None
-    lines = [l for l in (r.stdout + r.stderr).splitlines() if l.strip()]
-    # macOS tools prefix stderr lines with a timestamp and process name
-    return "\n".join(re.sub(r"^\d{4}-\d\d-\d\d [\d:.]+ \w+\[\d+:\d+\] ", "", l) for l in lines).strip()
-
-
-def defaults_read(domain, key):
-    out = run(["defaults", "read", domain, key])
-    return None if out is None or "does not exist" in out else out.strip()
-
-
-def probe_password_manager():
-    names = ["1Password", "Bitwarden", "KeePassXC", "Dashlane", "Proton Pass", "Enpass", "NordPass", "LastPass", "Keeper"]
-    if OS == "macos":
-        dirs = [Path("/Applications"), Path.home() / "Applications"]
-        where = "Applications folders"
-    elif OS == "windows":
-        dirs = [Path(os.environ.get(v, "")) for v in ("ProgramFiles", "ProgramFiles(x86)", "LOCALAPPDATA") if os.environ.get(v)]
-        dirs += [d / "Programs" for d in dirs]
-        where = "Program Files and AppData"
-    else:
-        found = [n for n in ["bitwarden", "keepassxc", "1password", "proton-pass", "enpass"] if shutil.which(n)]
-        return ("found" if found else "none"), (f"Found: {', '.join(found)}" if found else "No password manager app found on PATH."), ["which bitwarden keepassxc 1password proton-pass enpass"]
-    found = []
-    for d in dirs:
-        try:
-            entries = [e.name for e in d.iterdir()]
-        except OSError:
-            continue
-        found += [n for n in names if any(e.lower().startswith(n.lower()) for e in entries) and n not in found]
-    if found:
-        return "found", f"Found: {', '.join(found)}.", [f"looked in {where}"]
-    return "none", "No password manager app found. A browser, phone or extension manager may still be in use.", [f"looked in {where}"]
-
-
-def probe_auto_updates():
-    if OS == "macos":
-        keys = ["AutomaticallyInstallMacOSUpdates", "CriticalUpdateInstall"]
-        vals = {k: defaults_read("/Library/Preferences/com.apple.SoftwareUpdate", k) for k in keys}
-        ev = [f"defaults read /Library/Preferences/com.apple.SoftwareUpdate {k} → {v or 'not set'}" for k, v in vals.items()]
-        if vals["AutomaticallyInstallMacOSUpdates"] == "1":
-            return "on", "This Mac installs macOS updates automatically.", ev
-        if vals["AutomaticallyInstallMacOSUpdates"] == "0":
-            return "off", "This Mac does not install macOS updates automatically.", ev
-        return "unknown", "Couldn't read the setting.", ev
-    if OS == "windows":
-        out = run(["reg", "query", r"HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU", "/v", "NoAutoUpdate"])
-        ev = [f"reg query ...\\WindowsUpdate\\AU /v NoAutoUpdate → {out or 'not set'}"]
-        if out and re.search(r"NoAutoUpdate\s+REG_DWORD\s+0x1", out):
-            return "off", "A policy turns automatic updates off.", ev
-        return "on", "No policy blocks automatic updates (Windows default is on).", ev
-    conf = Path("/etc/apt/apt.conf.d/20auto-upgrades")
-    if conf.exists():
-        on = re.search(r'Unattended-Upgrade\s+"1"', conf.read_text(errors="ignore"))
-        return ("on" if on else "off"), ("Unattended upgrades are on." if on else "Unattended upgrades are off."), [f"read {conf}"]
-    out = run(["systemctl", "is-enabled", "dnf-automatic-install.timer"]) or run(["systemctl", "is-enabled", "dnf-automatic.timer"])
-    if out:
-        return ("on" if out.startswith("enabled") else "off"), f"dnf-automatic timer: {out}", ["systemctl is-enabled dnf-automatic*.timer"]
-    return "unknown", "No unattended-upgrades or dnf-automatic setup found.", [f"checked {conf} and dnf-automatic timers"]
-
-
-def probe_screen_lock():
-    if OS == "macos":
-        out = run(["sysadminctl", "-screenLock", "status"])
-        ev = [f"sysadminctl -screenLock status → {out or 'no output'}"]
-        if not out:
-            return "unknown", "Couldn't read the setting.", ev
-        if "off" in out:
-            return "off", "This Mac doesn't ask for a password after sleep or the screen saver.", ev
-        m = re.search(r"delay is (\w+(?: seconds)?)", out)
-        delay = m.group(1) if m else "unknown"
-        return "on", f"This Mac asks for a password after sleep or the screen saver (delay: {delay}).", ev
-    out = run(["gsettings", "get", "org.gnome.desktop.screensaver", "lock-enabled"])
-    ev = [f"gsettings get org.gnome.desktop.screensaver lock-enabled → {out or 'not available'}"]
-    if out in ("true", "false"):
-        return ("on" if out == "true" else "off"), f"GNOME screen lock is {'on' if out == 'true' else 'off'}.", ev
-    return "unknown", "Couldn't read the setting.", ev
-
-
-def probe_lockdown_mode():
-    v = defaults_read(".GlobalPreferences", "LDMGlobalEnabled")
-    ev = [f"defaults read .GlobalPreferences LDMGlobalEnabled → {v or 'not set'}"]
-    return ("on", "Lockdown Mode is on.", ev) if v == "1" else ("off", "Lockdown Mode is off on this Mac.", ev)
-
-
 def read_json(p):
     try:
         return json.loads(p.read_text(encoding="utf-8"))
@@ -351,14 +238,6 @@ def probe_agents():
 
 
 PROBES = [
-    {"id": "password_manager", "label": "Password manager", "os": ["macos", "windows", "linux"], "fn": probe_password_manager,
-     "steps": ["password_manager"], "questions": ["passwords"]},
-    {"id": "auto_updates", "label": "Automatic updates (this computer)", "os": ["macos", "windows", "linux"], "fn": probe_auto_updates,
-     "steps": ["auto_updates"], "questions": ["updates"]},
-    {"id": "screen_lock", "label": "Screen lock (this computer)", "os": ["macos", "linux"], "fn": probe_screen_lock,
-     "steps": ["screen_lock"], "questions": []},
-    {"id": "lockdown_mode", "label": "Lockdown Mode (this Mac)", "os": ["macos"], "fn": probe_lockdown_mode,
-     "steps": ["lockdown_mode"], "questions": []},
     {"id": "agents", "label": "AI tools and what they can reach", "os": ["macos", "windows", "linux"], "fn": probe_agents,
      "steps": ["agent_inventory", "agent_confirm", "agent_revoke"], "questions": ["ai_assistants", "ai_agents"]},
 ]
@@ -398,7 +277,7 @@ def show_question(q, state):
     a, v = state["answers"], visible(state["answers"])
     opts = options_of(q, a)
     print(f"Question {v.index(q) + 1} of {len(v)} · id: {q['id']}")
-    print(question_text(q, a))
+    print(q["text"])
     if q.get("hint"):
         print(q["hint"])
     for i, o in enumerate(opts, 1):
@@ -516,7 +395,7 @@ def cmd_plan(state, args):
         items = order([s for s in todo if lane(s) == key])
         print(f"\n{name.upper()} ({desc}) · {len(items)} {'step' if len(items) == 1 else 'steps'}")
         for s in items:
-            tags = [effort(s), f"impact {dots(s['impact'])}", kind(s)] + (["baseline"] if s["tier"] == 1 else [])
+            tags = [effort(s), f"impact {dots(s['impact'])}"] + (["baseline"] if s["tier"] == 1 else [])
             print(f"  [ ] {s['id']:<24} {s['title']} · {' · '.join(tags)} · help: {'/'.join(help_kinds(s['id']))}")
         if not items:
             print("  Nothing here.")
@@ -536,13 +415,12 @@ def cmd_step(state, args):
     a, st, h = state["answers"], status_map(state), ASSIST.get(args[0], {})
     status = {"todo": "in plan", "done": "done"}.get(st.get(s["id"]), "not in plan")
     print(f"Step: {s['id']} · {s['title']}")
-    print(f"{effort(s)} · impact {dots(s['impact'])} ({s['impact']} of 3) · {kind(s)}" + (" · baseline" if s["tier"] == 1 else "") + f" · status: {status}")
+    print(f"{effort(s)} · impact {dots(s['impact'])} ({s['impact']} of 3)" + (" · baseline" if s["tier"] == 1 else "") + f" · status: {status}")
     if h.get("how"):
         print(f"How: {h['how']}")
-    phone = a.get("phone")
-    for p in (["ios", "android"] if phone == "both" else [phone]):
+    for p, name in (("ios", "iPhone"), ("android", "Android")):
         if (h.get("phone") or {}).get(p):
-            print(f"On your {'iPhone' if p == 'ios' else 'Android phone'}: {h['phone'][p]}")
+            print(f"{name}: {h['phone'][p]}")
     if (h.get("computer") or {}).get(OS):
         print(f"On this computer ({OS_NAME}): {h['computer'][OS]}")
     links = links_of(s, a)
@@ -651,6 +529,10 @@ def cmd_validate(state, args):
             problems.append(f"assist.json: unknown step {sid}")
         if h.get("template") and not (SKILL / h["template"]).exists():
             problems.append(f"assist.json: {sid} template {h['template']} missing")
+    # the website marks these steps "Agent helps"; the skill must offer more than a how-to line
+    for s in STEPS:
+        if s.get("agentHelp") and help_kinds(s["id"]) in (["guide"], ["open"]):
+            problems.append(f"content.json: {s['id']} has agentHelp but the skill has no check, template or review for it")
     for p in PROBES:
         problems += [f"probe {p['id']}: unknown step {i}" for i in p["steps"] if i not in STEP]
         problems += [f"probe {p['id']}: unknown question {i}" for i in p["questions"] if i not in QUESTION]

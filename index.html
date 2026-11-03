@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Exposure Scale</title>
-<meta name="description" content="A guided check of your cybersecurity and AI exposure, with a plan sorted by effort.">
+<meta name="description" content="A short check of your AI exposure, with a plan sorted by effort.">
 <link rel="preload" href="fonts/ibm-plex-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/bricolage-grotesque-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <style>
@@ -91,6 +91,8 @@ h1{font:700 1.45rem/1 var(--f-display);letter-spacing:-.02em;margin:0}
 
 .fin h2{font:600 clamp(1.6rem,3.8vw,2.2rem)/1.1 var(--f-display);margin:0;letter-spacing:-.015em}
 .fin p{margin:0;color:var(--muted)}
+.fin p a{color:var(--ink)}
+.lede{margin:0;font-size:1.02rem;color:var(--muted);max-width:52ch;text-wrap:pretty}
 
 .side{display:grid;gap:22px;position:sticky;top:calc(env(safe-area-inset-top,0px) + 20px)}
 @media (max-width:860px){.side{position:static}}
@@ -134,6 +136,9 @@ h1{font:700 1.45rem/1 var(--f-display);letter-spacing:-.02em;margin:0}
 .go{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:7px;background:var(--chip);text-decoration:none;font-size:.82rem;font-weight:500}
 .go::after{content:"↗";font-size:.8em;color:var(--muted)}
 .go:hover{background:var(--ink);color:var(--bg)}
+.ag{font:500 .72rem/1 var(--f-mono);padding:3px 6px;border-radius:5px;border:1px solid var(--line)}
+.ah{margin:0;color:var(--muted)}
+.ah a{color:var(--ink)}
 .inplace summary{cursor:pointer;color:var(--muted);font-size:.9rem}
 .inplace ul{margin:10px 0 0;padding-left:18px;color:var(--muted);font-size:.9rem;columns:2;column-gap:28px}
 @media (max-width:620px){.inplace ul{columns:1}}
@@ -183,11 +188,11 @@ footer a{color:var(--ink)}
 
 <script>
 /* ===== content: loaded from content.json ===== */
-let AREAS=[],EMAIL_PROVIDERS={},STEPS=[],QUESTIONS=[],STEP_BY_ID={},QUESTION_BY_ID={};
+let INTRO='',AREAS=[],STEPS=[],QUESTIONS=[],STEP_BY_ID={},QUESTION_BY_ID={};
 
 /* ===== state ===== */
 const KEY='exposure-scale-v2';
-let S={a:{},ov:{},tab:'check',cur:null,last:null,open:{},f:{e:'all',k:'all',q:''}};
+let S={a:{},ov:{},tab:'check',cur:null,last:null,open:{},f:{e:'all',q:''}};
 try{const s=JSON.parse(localStorage.getItem(KEY)||'null');if(s)S={...S,a:s.a||{},ov:s.ov||{}}}catch(e){}
 const h=location.hash.slice(1);if(['check','plan','all'].includes(h))S.tab=h;
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify({a:S.a,ov:S.ov}))}catch(e){}};
@@ -203,15 +208,13 @@ function meets(c,a){
   if('minCount' in c){const q=QUESTION_BY_ID[c.question];return Array.isArray(v)&&v.filter(x=>!optionsOf(q).find(o=>o.value===x)?.exclusive).length>=c.minCount}
   return true;
 }
-const mainEmail=a=>a.main_email||(Array.isArray(a.email_accounts)&&a.email_accounts.length===1?a.email_accounts[0]:null);
 const visibleQuestions=()=>QUESTIONS.filter(q=>meets(q.showIf,S.a));
 function optionsOf(q){
   if(!q.optionsFrom)return q.options;
   const sel=S.a[q.optionsFrom];
   return Array.isArray(sel)?optionsOf(QUESTION_BY_ID[q.optionsFrom]).filter(o=>sel.includes(o.value)).map(({value,label})=>({value,label})):[];
 }
-const questionText=q=>q.text.replace('{mainEmail}',EMAIL_PROVIDERS[mainEmail(S.a)]?.name||'your main email');
-const linksOf=s=>(s.links||[]).flatMap(l=>l.emailProvider?[EMAIL_PROVIDERS[mainEmail(S.a)]?.[l.emailProvider]].filter(Boolean):meets(l.showIf,S.a)?[l]:[]);
+const linksOf=s=>(s.links||[]).filter(l=>meets(l.showIf,S.a));
 function effectsOf(q,ans){
   const o={add:[],done:[]};if(ans==null||ans==='skip')return o;
   const sel=q.multi?ans:[ans];
@@ -221,12 +224,11 @@ function effectsOf(q,ans){
 }
 function derived(){const st={};visibleQuestions().forEach(q=>{const e=effectsOf(q,S.a[q.id]);e.add.forEach(id=>{if(st[id]!=='done')st[id]='todo'});e.done.forEach(id=>st[id]='done')});return st}
 function statusMap(){const st=derived(),out={};STEPS.forEach(s=>{const o=S.ov[s.id];const v=o==='off'?undefined:(o||st[s.id]);if(v)out[s.id]=v});return out}
-// Effort lanes: 10 min or less → Minutes, up to 60 → An evening, longer or with an effortLabel → Bigger
-const lane=s=>s.effortLabel||s.minutes>60?'bigger':s.minutes<=10?'minutes':'evening';
-const LANES=[['minutes','Minutes','10 min or less each'],['evening','An evening','Up to an hour'],['bigger','Bigger','Purchases, calls or ongoing']];
+// Lanes: steps that need someone else → With others; on your own, 10 min or less → Minutes, longer → An evening
+const lane=s=>s.withOthers?'others':s.minutes<=10?'minutes':'evening';
+const LANES=[['minutes','Minutes','10 min or less, on your own'],['evening','An evening','Longer, on your own'],['others','With others','Needs family, your bank or a company']];
 const fmt=m=>m<60?`${m} min`:`${Math.floor(m/60)} h${m%60?' '+(m%60)+' min':''}`;
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const kindLabel=s=>s.kind.length>1?'Cyber + AI':s.kind[0]==='ai'?'AI':'Cyber';
 const impactDots=s=>`<span class="imp" title="Impact ${s.impact} of 3" aria-label="Impact ${s.impact} of 3">${[1,2,3].map(n=>`<i class="${n<=s.impact?'on':''}"></i>`).join('')}</span>`;
 const current=()=>{if(S.cur){const q=visibleQuestions().find(q=>q.id===S.cur);if(q)return q}return visibleQuestions().find(q=>!(q.id in S.a))};
 function ansText(q,ans){if(ans==='skip')return 'Skipped';const o=optionsOf(q),sel=q.multi?ans:[ans];return o.filter(x=>sel.includes(x.value)).map(x=>x.label).join(', ')||'—'}
@@ -267,7 +269,7 @@ function vCheck(st){
     if(q.multi&&pick.__for!==q.id){pick=Array.isArray(S.a[q.id])?[...S.a[q.id]]:[];pick.__for=q.id}
     const prevIdx=V.indexOf(q)-1;
     stage=`<div class="q" id="q-${q.id}">
-      <h2>${esc(questionText(q))}</h2>${q.hint?`<p class="hint">${esc(q.hint)}</p>`:''}
+      <h2>${esc(q.text)}</h2>${q.hint?`<p class="hint">${esc(q.hint)}</p>`:''}
       <div class="opts">${opts.map((o,i)=>{const on=q.multi?pick.includes(o.value):S.a[q.id]===o.value;
         return `<button type="button" class="opt" data-pick="${o.value}" aria-pressed="${on}"><span class="k">${i+1}</span><span class="l">${esc(o.label)}${o.detail?`<span class="s">${esc(o.detail)}</span>`:''}</span>${q.multi?'<span class="box"></span>':''}</button>`}).join('')}</div>
       <div class="qfoot">${q.multi?`<button type="button" class="btn" data-next ${pick.length?'':'disabled'}>Continue</button>`:''}
@@ -278,26 +280,29 @@ function vCheck(st){
     const todo=STEPS.filter(s=>st[s.id]==='todo'),quick=todo.filter(s=>lane(s)==='minutes');
     stage=`<div class="q fin"><h2>That’s the picture.</h2>
       <p>${todo.length} steps to do, about ${fmt(todo.reduce((t,s)=>t+s.minutes,0))} in total. ${quick.length} of them take minutes.</p>
+      ${todo.some(s=>s.agentHelp)?`<p>Steps marked <span class="ag">Agent helps</span> go faster with the <a href="${SKILL_URL}" target="_blank" rel="noopener">Exposure Scale skill</a> for Claude Code, Codex or Gemini CLI.</p>`:''}
       <div class="qfoot"><button type="button" class="btn" data-tab="plan">Open your plan</button><button type="button" class="ghost" data-tab="all">Browse all steps</button><button type="button" class="ghost" data-restart>Start over</button></div></div>`;
   }
   const answers=V.filter(x=>x.id in S.a).map(x=>`<button type="button" data-edit="${x.id}"><span>${esc(x.label)}</span><span class="mono" style="font-size:.74rem;color:var(--muted)">edit</span><span class="a">${esc(ansText(x,S.a[x.id]))}</span></button>`).join('');
   return `<div class="check"><div class="stage">
       <div class="prog"><div class="track"><i style="width:${V.length?answered/V.length*100:0}%"></i></div><span class="mono">${answered}/${V.length}</span></div>
-      ${reply}${stage}</div>
+      ${answered?'':`<p class="lede">${esc(INTRO)}</p>`}${reply}${stage}</div>
     <aside class="side">${tallyHTML(st)}${answers?`<div><div class="label" style="margin:0 0 6px 8px">Your answers</div><div class="answers">${answers}</div></div>`:''}</aside></div>`;
 }
 
-// Only steps with links open; the title becomes the toggle
-const opens=s=>linksOf(s).length>0;
+// Steps open when they have links or agent help; the title becomes the toggle
+const SKILL_URL='https://github.com/yaedin/exposure-scale#agent-skill';
+const opens=s=>linksOf(s).length>0||!!s.agentHelp;
+const agentChip=s=>s.agentHelp?'<span class="ag">Agent helps</span>':'';
 const toggleAttrs=s=>opens(s)?`type="button" data-open="${s.id}" aria-expanded="${!!S.open[s.id]}"`:'';
-const moreHTML=s=>S.open[s.id]&&opens(s)?`<div class="more"><div class="links">${linksOf(s).map(l=>`<a class="go" href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.label)}</a>`).join('')}</div></div>`:'';
+const moreHTML=s=>S.open[s.id]&&opens(s)?`<div class="more">${linksOf(s).length?`<div class="links">${linksOf(s).map(l=>`<a class="go" href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.label)}</a>`).join('')}</div>`:''}${s.agentHelp?`<p class="ah">${esc(s.agentHelp)} <a href="${SKILL_URL}" target="_blank" rel="noopener">Get the skill</a></p>`:''}</div>`:'';
 const tag=s=>opens(s)?'button':'div';
 
 function card(s,stv){
   return `<div class="card ${stv==='done'?'is-done':''}">
     <button type="button" class="tick" data-done="${s.id}" aria-pressed="${stv==='done'}" aria-label="Mark done"></button>
     <${tag(s)} class="ct" ${toggleAttrs(s)}>${esc(s.title)}</${tag(s)}>
-    <div class="meta"><span class="mono">${s.effortLabel?esc(s.effortLabel):fmt(s.minutes)}</span>${impactDots(s)}<span>${kindLabel(s)}</span></div>
+    <div class="meta"><span class="mono">${fmt(s.minutes)}</span>${impactDots(s)}${agentChip(s)}</div>
     ${moreHTML(s)}
   </div>`;
 }
@@ -319,16 +324,16 @@ function vPlan(st){
 
 function vAll(st){
   const f=S.f,qq=f.q.trim().toLowerCase();
-  const match=s=>(f.e==='all'||lane(s)===f.e)&&(f.k==='all'||s.kind.includes(f.k))&&(!qq||s.title.toLowerCase().includes(qq));
+  const match=s=>(f.e==='all'||lane(s)===f.e)&&(!qq||s.title.toLowerCase().includes(qq));
   const seg=(key,cur,opts)=>`<div class="fseg" role="group">${opts.map(([v,l])=>`<button type="button" data-f="${key}" data-v="${v}" aria-pressed="${cur===v}">${l}</button>`).join('')}</div>`;
   const withLinks=STEPS.filter(opens),rows=withLinks.every(s=>S.open[s.id])?'open':withLinks.some(s=>S.open[s.id])?'':'closed';
   const areas=AREAS.map(({id,name})=>{const its=STEPS.filter(s=>s.area===id&&match(s));if(!its.length)return '';
     return `<section class="area"><h3>${name}<span class="n">${its.length}</span></h3><div class="rows">${its.map(s=>{const v=st[s.id];
-      return `<div class="row"><${tag(s)} class="rt" ${toggleAttrs(s)}><span>${esc(s.title)}</span><span class="meta"><span class="mono">${s.effortLabel?esc(s.effortLabel):fmt(s.minutes)}</span>${impactDots(s)}<span>${kindLabel(s)}</span></span></${tag(s)}>
+      return `<div class="row"><${tag(s)} class="rt" ${toggleAttrs(s)}><span>${esc(s.title)}</span><span class="meta"><span class="mono">${fmt(s.minutes)}</span>${impactDots(s)}${agentChip(s)}</span></${tag(s)}>
         <button type="button" class="st ${v||''}" data-cycle="${s.id}">${v==='todo'?'In plan':v==='done'?'Done':'Add'}</button>
         ${moreHTML(s)}</div>`}).join('')}</div></section>`}).join('');
   return `<div class="all"><div class="filters"><input id="search" type="search" placeholder="Search steps" value="${esc(f.q)}" aria-label="Search steps">
-    ${seg('e',f.e,[['all','Any effort'],['minutes','Minutes'],['evening','Evening'],['bigger','Bigger']])}${seg('k',f.k,[['all','All'],['cyber','Cyber'],['ai','AI']])}${seg('rows',rows,[['closed','Hide links'],['open','Show links']])}</div>
+    ${seg('e',f.e,[['all','Any effort'],['minutes','Minutes'],['evening','Evening'],['others','With others']])}${seg('rows',rows,[['closed','Hide links'],['open','Show links']])}</div>
     ${areas||'<p class="nores">No steps match.</p>'}</div>`;
 }
 
@@ -367,7 +372,7 @@ document.addEventListener('keydown',e=>{
   else if(e.key==='Enter'&&q.multi&&pick.length&&!e.target.closest('.opt')){e.preventDefault();answer(q,[...pick])}
 });
 fetch('content.json').then(r=>r.json()).then(c=>{
-  ({areas:AREAS,emailProviders:EMAIL_PROVIDERS,steps:STEPS,questions:QUESTIONS}=c);
+  ({intro:INTRO,areas:AREAS,steps:STEPS,questions:QUESTIONS}=c);
   STEP_BY_ID=Object.fromEntries(STEPS.map(s=>[s.id,s]));
   QUESTION_BY_ID=Object.fromEntries(QUESTIONS.map(q=>[q.id,q]));
   $('checked').textContent=`Links last checked ${new Date(c.linksChecked+'T12:00').toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})}.`;

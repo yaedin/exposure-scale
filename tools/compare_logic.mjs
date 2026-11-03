@@ -23,7 +23,7 @@ for(let i=0;i<N;i++){
   }
   if(rnd()<0.3)js(`S.ov[STEPS[${Math.floor(rnd()*content.steps.length)}].id]=${JSON.stringify(['done','todo','off'][Math.floor(rnd()*3)])}`);
   cases.push(JSON.parse(js(`JSON.stringify({answers:S.a,overrides:S.ov,expect:{visible:visibleQuestions().map(q=>q.id),status:statusMap(),
-    text:visibleQuestions().map(questionText),options:visibleQuestions().map(q=>optionsOf(q).map(o=>o.value)),
+    options:visibleQuestions().map(q=>optionsOf(q).map(o=>o.value)),
     links:STEPS.map(s=>linksOf(s).map(l=>l.url)),lanes:STEPS.map(lane)}})`)));
 }
 const py=`
@@ -32,8 +32,7 @@ spec=importlib.util.spec_from_file_location("exposure","skills/exposure-scale/sc
 bad=0
 for c in json.load(sys.stdin):
     a=c["answers"];st={"answers":a,"overrides":c["overrides"],"checks":{}};v=m.visible(a)
-    got={"visible":[q["id"] for q in v],"status":m.status_map(st),"text":[m.question_text(q,a) for q in v],
-         "options":[[o["value"] for o in m.options_of(q,a)] for q in v],"links":[[l["url"] for l in m.links_of(s,a)] for s in m.STEPS],"lanes":[m.lane(s) for s in m.STEPS]}
+    got={"visible":[q["id"] for q in v],"status":m.status_map(st),"options":[[o["value"] for o in m.options_of(q,a)] for q in v],"links":[[l["url"] for l in m.links_of(s,a)] for s in m.STEPS],"lanes":[m.lane(s) for s in m.STEPS]}
     for k,e in c["expect"].items():
         if got[k]!=e:
             bad+=1

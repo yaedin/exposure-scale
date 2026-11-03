@@ -12,7 +12,7 @@ import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 
 # These sites answer scripts with errors but work in a browser; check them by hand.
-BLOCKS_SCRIPTS = {"consumer.ftc.gov", "www.facebook.com"}
+BLOCKS_SCRIPTS = {"consumer.ftc.gov", "www.facebook.com", "ico.org.uk"}
 UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36"
 
 content = json.load(open("content.json"))
@@ -54,10 +54,6 @@ for s in content["steps"]:
     for l in s.get("links", []):
         if "url" in l:
             urls.setdefault(l["url"], []).append(s["id"])
-for p in content["emailProviders"].values():
-    for key in ("security", "connectedApps"):
-        if key in p:
-            urls.setdefault(p[key]["url"], []).append(f"email:{p['name']}")
 
 
 def fetch(url):

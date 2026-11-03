@@ -1,0 +1,21 @@
+# Lines to add to the site's robots.txt. Show them to the user and add them only after they approve the diff.
+# Each blocks a crawler or control token that its vendor documents as used for AI training (vendor docs checked Nov 2026).
+# Search crawlers (Googlebot, Bingbot, OAI-SearchBot, Claude-SearchBot) are left alone so the site stays findable.
+
+User-agent: GPTBot
+Disallow: /
+
+User-agent: ClaudeBot
+Disallow: /
+
+User-agent: Google-Extended
+Disallow: /
+
+User-agent: Applebot-Extended
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: Meta-ExternalAgent
+Disallow: /

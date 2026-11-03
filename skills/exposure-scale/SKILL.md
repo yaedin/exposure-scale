@@ -1,6 +1,6 @@
 ---
 name: exposure-scale
-description: Runs a guided check of a person's cybersecurity and AI exposure, then helps them work through the resulting plan. Asks one question at a time, builds a plan sorted by effort (minutes, an evening, bigger), and assists with each step through read-only checks on this computer, opening the right settings page, drafting letters and family messages, and reviewing what AI agents can reach. Use when the user asks for a security or privacy checkup, wants to protect accounts, money or family from scams, voice cloning, deepfakes, data brokers or AI training, or mentions Exposure Scale.
+description: Runs a guided check of a person's AI exposure, then helps them work through the resulting plan. Asks one question at a time, builds a plan sorted by effort (minutes, an evening, or with others), and assists with each step by reviewing what AI agents on this computer can reach, opening the right settings page, drafting letters and family messages, and adding AI-crawler rules to the user's own website. Use when the user wants to protect themselves or their family from voice-clone scams, deepfakes, AI training on their data or work, risky AI agents, or unexplained automated decisions, or mentions Exposure Scale.
 compatibility: Needs a shell and Python 3.8+ for the guided flow (falls back to reading the JSON without them). Works offline; opens web pages only when the user agrees.
 metadata:
   author: yaedin
@@ -46,7 +46,7 @@ Copy this checklist and keep it updated:
 
 **1. Status.** Run `status`. If answers exist, say where things stand and offer to continue or start over (`reset --yes` deletes everything; confirm first).
 
-**2. Offer the computer check.** Say: it reads a few settings on this computer (password manager apps, automatic updates, screen lock, which AI tools are installed and what they can reach), changes nothing, and sends nothing anywhere. If the user agrees, run `detect` and summarize in two or three lines. Findings appear next to the matching questions; the user still answers.
+**2. Offer the computer check.** Say: it reads which AI tools are installed on this computer and what they can reach (names and permission modes only), changes nothing, and sends nothing anywhere. If the user agrees, run `detect` and summarize in two or three lines. Findings appear next to the matching questions; the user still answers.
 
 **3. Questions.** Run `next`, ask, then `answer <id> <choice>`. The answer command prints the option's note, the effect on the plan and the next question. Relay the note and the effect in one line, then ask the next question. To change an earlier answer, run `answers`, then `answer` again.
 
@@ -60,7 +60,7 @@ Copy this checklist and keep it updated:
 
 - **check:** offer `check <id>`. Show the result line and what it ran. It covers this computer only; ask about the phone where the step mentions one.
 - **open:** offer `open <id>` (or `open <id> <link number>`). Give the `How` line while they're on the page.
-- **draft:** read the template named in the step output, fill it in with what the user tells you, and save it where they choose. They send it. Never put a safe word in a file.
+- **draft:** read the template named in the step output, fill it in with what the user tells you, and save it where they choose. They send it. Never put a safe word in a file. For `block_ai_crawlers`, ask where the site's files live, show the lines from the template to add to its `robots.txt`, and edit only after the user approves the diff. Sites on a builder (Squarespace, Wix, WordPress.com) use the builder's setting instead.
 - **review:** run `check <id>`, then go through each tool and connection by name with the user. Suggest what to remove or tighten; changes follow the config-file rule above.
 - **guide:** give the `How` and phone lines, answer questions, wait for them to do it.
 
