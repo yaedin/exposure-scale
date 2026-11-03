@@ -156,6 +156,7 @@ h1{font:700 1.45rem/1 var(--f-display);letter-spacing:-.02em;margin:0}
 .row:first-child{border-top:0}
 .row .rt{display:grid;gap:2px;min-width:0;padding:0}
 .row .rt span:first-child{font-weight:500}
+.row .meta{grid-column:auto;padding:0}
 .row .more{grid-column:1/-1;padding-left:0}
 .st{font:500 .72rem/1 var(--f-mono);padding:5px 8px;border-radius:6px;white-space:nowrap;border:1px solid var(--line);color:var(--muted)}
 .st.todo{background:var(--todo-bg);color:var(--todo);border-color:transparent}
@@ -177,149 +178,16 @@ footer a{color:var(--ink)}
   <div id="view"></div>
   <footer>
     <p><b>Privacy.</b> Your answers stay in this browser’s local storage. No accounts, cookies, analytics or tracking. The site is hosted on GitHub Pages, which may log your IP address (<a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement" target="_blank" rel="noopener">GitHub’s privacy statement</a>). Fonts are served from this site.</p>
-    <p><b>Prototype.</b> General guidance, not professional advice. Some settings links may be out of date. <a href="https://github.com/yaedin/exposure-scale" target="_blank" rel="noopener">Source and feedback</a>.</p>
+    <p><b>Prototype.</b> General guidance, not professional advice. <span id="checked"></span> <a href="https://github.com/yaedin/exposure-scale" target="_blank" rel="noopener">Source and feedback</a>.</p>
   </footer>
 </div>
 
 <script>
-/* ===== data ===== */
-const AREAS=[['acc','Accounts'],['dev','Devices'],['out','Data already out there'],['mon','Money'],['vox','Voice & likeness'],['hab','Family & habits'],['tai','Data you give AI'],['agt','AI acting for you'],['rsp','If something happens']];
-const MAIL={gmail:{l:'Gmail',sec:['Google security','https://myaccount.google.com/security'],apps:['Google connections','https://myaccount.google.com/connections']},
-  outlook:{l:'Outlook / Hotmail',sec:['Microsoft security','https://account.microsoft.com/security'],apps:['Microsoft app access','https://account.live.com/consent/Manage']},
-  icloud:{l:'iCloud',sec:['Apple Account','https://account.apple.com']},
-  proton:{l:'Proton',sec:['Proton account','https://account.proton.me']},
-  work:{l:'Work or school'},other:{l:'another provider'}};
-const mainOf=a=>a.main||(a.mail&&a.mail.length===1?a.mail[0]:null);
-const secL=a=>{const m=MAIL[mainOf(a)];return m&&m.sec?[m.sec]:[]};
-const appsL=a=>{const m=MAIL[mainOf(a)];return m&&m.apps?[m.apps]:[]};
-
-// min: minutes · imp: 1–3 · tier 1 baseline / 2 recommended / 3 advanced · k: c cyber, a AI · m: how a full build checks it
-const STEPS=[
- {id:'pm_start',a:'acc',t:'Start a password manager',w:'Begin with email and bank. Move the rest as you log in.',min:45,imp:3,tier:1,k:'c',m:'self',L:()=>[['Bitwarden','https://bitwarden.com'],['1Password','https://1password.com']]},
- {id:'pm_report',a:'acc',t:'Run your password manager’s security report',w:'Fix anything flagged breached or reused.',min:10,imp:3,tier:1,k:'c',m:'auto'},
- {id:'browser_check',a:'acc',t:'Run your browser’s password check',w:'Fix what it flags as breached or reused.',min:10,imp:3,tier:1,k:'c',m:'auto',L:()=>[['Google Password Checkup','https://passwords.google.com']]},
- {id:'reuse_fix',a:'acc',t:'Give email and bank their own passwords',w:'The two accounts that unlock the rest.',min:15,imp:3,tier:1,k:'c',m:'self'},
- {id:'email_2fa',a:'acc',t:'Add an authenticator or passkey to your main email',w:'Email resets everything else.',min:10,imp:3,tier:1,k:'ca',m:'link',L:secL},
- {id:'email_sms',a:'acc',t:'Swap text codes for app prompts or a passkey',w:'Text codes can be intercepted.',min:10,imp:2,tier:2,k:'c',m:'link',L:secL},
- {id:'recovery',a:'acc',t:'Check recovery phone and email',w:'Old numbers are a back door.',min:5,imp:2,tier:1,k:'c',m:'link',L:secL},
- {id:'other_email',a:'acc',t:'Repeat sign-in protection on your other email accounts',w:'Each one can reset something.',min:20,imp:2,tier:2,k:'c',m:'link'},
- {id:'hwkey',a:'acc',t:'Add a hardware security key',w:'Sign-in that phishing can’t steal.',min:30,imp:2,tier:3,k:'c',m:'link',proj:'Buy a key',L:()=>[['Advanced Protection','https://landing.google.com/advancedprotection/']]},
- {id:'carrier_pin',a:'acc',t:'Set a port-out PIN with your carrier',w:'Blocks SIM-swap takeovers.',min:15,imp:2,tier:2,k:'c',m:'self'},
-
- {id:'auto_updates',a:'dev',t:'Turn on automatic updates',w:'Most attacks use bugs that are already patched.',min:2,imp:3,tier:1,k:'c',m:'auto'},
- {id:'screen_lock',a:'dev',t:'Screen lock with biometrics',w:'Your phone holds most of your logins.',min:2,imp:3,tier:1,k:'c',m:'auto'},
- {id:'app_access',a:'dev',t:'Remove old apps with access to your account',w:'Forgotten grants keep working.',min:10,imp:2,tier:2,k:'c',m:'link',L:appsL},
- {id:'lockdown',a:'dev',t:'Lockdown Mode or Advanced Protection',w:'For people likely to be targeted.',min:5,imp:1,tier:3,k:'c',m:'link',L:a=>a.phone==='android'?[]:[['Apple guide','https://support.apple.com/en-us/105120']]},
-
- {id:'hibp',a:'out',t:'Check your emails on Have I Been Pwned',w:'See what leaked, then fix those accounts.',min:3,imp:2,tier:1,k:'c',m:'auto',L:()=>[['Have I Been Pwned','https://haveibeenpwned.com']]},
- {id:'monitor',a:'out',t:'Turn on breach alerts',w:'Hear about the next one early.',min:3,imp:1,tier:2,k:'c',m:'auto',L:()=>[['Mozilla Monitor','https://monitor.mozilla.org']]},
- {id:'brokers_us',a:'out',t:'Remove yourself from people-search sites',w:'Do it by hand, or pay a service to repeat it.',min:120,imp:2,tier:2,k:'ca',m:'auto',proj:'Hours or a subscription',L:()=>[['Optery','https://www.optery.com'],['Incogni','https://incogni.com']]},
- {id:'brokers_eu',a:'out',t:'Send GDPR erasure requests to data brokers',w:'You have the right. A generator writes the letters.',min:60,imp:2,tier:2,k:'ca',m:'link',L:()=>[['datarequests.org','https://www.datarequests.org']]},
- {id:'rays',a:'out',t:'Remove your contact details from Google results',w:'Hides phone and address from search.',min:10,imp:1,tier:3,k:'c',m:'link',L:()=>[['Results about you','https://myactivity.google.com/results-about-you']]},
-
- {id:'freeze',a:'mon',t:'Freeze your credit at all three bureaus',w:'Blocks new credit in your name. Free.',min:30,imp:3,tier:1,k:'c',m:'link',L:()=>[['FTC guide','https://consumer.ftc.gov/articles/what-know-about-credit-freezes-and-fraud-alerts']]},
- {id:'txn_alerts',a:'mon',t:'Turn on transaction alerts',w:'Spot fraud within minutes.',min:5,imp:2,tier:1,k:'c',m:'self'},
- {id:'voice_id_off',a:'mon',t:'Ask your bank to switch off voice ID',w:'Cloned voices have passed these checks. Use the number on your card.',min:15,imp:3,tier:1,k:'a',m:'self'},
- {id:'bank_mfa',a:'mon',t:'Use app or key sign-in at your bank',w:'Avoid text codes where you can.',min:10,imp:2,tier:2,k:'c',m:'self'},
-
- {id:'voicemail',a:'vox',t:'Switch your voicemail greeting to the default',w:'A recorded greeting is a free voice sample.',min:2,imp:1,tier:2,k:'a',m:'self'},
- {id:'voice_list',a:'vox',t:'List where your voice is public',w:'Seconds of audio can be enough to clone it.',min:15,imp:1,tier:2,k:'a',m:'self'},
- {id:'voice_aud',a:'vox',t:'Limit who sees videos with your voice',w:'Fewer samples to clone from.',min:30,imp:2,tier:2,k:'a',m:'self'},
- {id:'yt_like',a:'vox',t:'Turn on YouTube likeness detection',w:'Flags AI videos using your face. Needs ID and a selfie.',min:15,imp:2,tier:3,k:'a',m:'auto',L:()=>[['YouTube Studio','https://studio.youtube.com']]},
- {id:'loti',a:'vox',t:'Set up likeness monitoring across the web',w:'Watches for your face beyond YouTube.',min:15,imp:1,tier:3,k:'a',m:'auto',L:()=>[['Loti','https://lotiai.com']]},
-
- {id:'safe_word',a:'hab',t:'Agree a family safe word',w:'Ask for it. Never say it first.',min:10,imp:3,tier:1,k:'a',m:'self'},
- {id:'callback',a:'hab',t:'Agree a callback rule for money requests',w:'Hang up. Call back on a number you already have.',min:5,imp:3,tier:1,k:'ca',m:'self'},
- {id:'relatives',a:'hab',t:'Brief older relatives',w:'They’re the main target of voice scams.',min:30,imp:2,tier:2,k:'a',m:'self'},
-
- {id:'oo_chatgpt',a:'tai',t:'Turn off training in ChatGPT',w:'Settings → Data controls.',min:2,imp:1,tier:1,k:'a',m:'link',L:()=>[['ChatGPT settings','https://chatgpt.com/#settings/DataControls']]},
- {id:'oo_claude',a:'tai',t:'Turn off training in Claude',w:'Settings → Privacy.',min:2,imp:1,tier:1,k:'a',m:'link',L:()=>[['Claude settings','https://claude.ai/settings/data-privacy-controls']]},
- {id:'oo_gemini',a:'tai',t:'Turn off Gemini activity',w:'Stops chats being kept for review and training.',min:2,imp:1,tier:1,k:'a',m:'link',L:()=>[['Gemini activity','https://myactivity.google.com/product/gemini']]},
- {id:'oo_copilot',a:'tai',t:'Turn off training in Microsoft Copilot',w:'Profile → Privacy.',min:2,imp:1,tier:1,k:'a',m:'link',L:()=>[['Copilot','https://copilot.microsoft.com']]},
- {id:'oo_meta',a:'tai',t:'Check Meta AI training settings',w:'Public posts are used for training.',min:5,imp:1,tier:2,k:'a',m:'link',L:()=>[['Meta Privacy Center','https://www.facebook.com/privacy/center/']]},
- {id:'oo_li',a:'tai',t:'Turn off LinkedIn AI training',w:'On by default.',min:2,imp:1,tier:1,k:'a',m:'link',L:()=>[['LinkedIn setting','https://www.linkedin.com/mypreferences/d/settings/data-for-ai-improvement']]},
- {id:'oo_gh',a:'tai',t:'Turn off GitHub Copilot training',w:'Personal accounts were opted in in April 2026.',min:2,imp:1,tier:2,k:'a',m:'link',L:()=>[['Copilot settings','https://github.com/settings/copilot']]},
- {id:'ai_memory',a:'tai',t:'Review what your assistants remember',w:'Memory collects personal details over time.',min:10,imp:1,tier:2,k:'a',m:'self'},
-
- {id:'ag_list',a:'agt',t:'List what each agent can reach',w:'Email, files, payments.',min:10,imp:2,tier:1,k:'a',m:'self'},
- {id:'ag_confirm',a:'agt',t:'Require a confirm before agents send or pay',w:'Web pages can carry hidden instructions.',min:5,imp:3,tier:1,k:'ca',m:'self'},
- {id:'ag_revoke',a:'agt',t:'Revoke agent connections you don’t use',w:'Idle access is pure risk.',min:10,imp:2,tier:2,k:'a',m:'link',L:appsL},
- {id:'ag_bank',a:'agt',t:'Keep agents out of banking sessions',w:'A logged-in agent can be steered.',min:5,imp:2,tier:2,k:'ca',m:'self'},
-
- {id:'backup',a:'rsp',t:'Store backup codes offline',w:'Your way back in if the phone is lost.',min:10,imp:2,tier:2,k:'c',m:'self'},
- {id:'report',a:'rsp',t:'Bookmark where to report fraud',w:'Fast reports help recovery.',min:2,imp:1,tier:2,k:'ca',m:'link',L:a=>a.where==='us'?[['FTC','https://reportfraud.ftc.gov']]:[['Europol links','https://www.europol.europa.eu/report-a-crime/report-cybercrime-online']]},
- {id:'takedown',a:'rsp',t:'Know the deepfake takedown routes',w:'For intimate images, real or fake.',min:3,imp:1,tier:3,k:'a',m:'link',L:a=>[['StopNCII','https://stopncii.org'],...(a.where==='us'?[['FTC Take It Down','https://takeitdown.ftc.gov']]:[])]},
-];
-const SB=Object.fromEntries(STEPS.map(s=>[s.id,s]));
-
-const QS=[
- {id:'pw',short:'Passwords',q:'How do you keep track of your passwords?',opts:[
-   {v:'pm',l:'A password manager',s:'Bitwarden, 1Password, Proton Pass…',note:'Good base.',done:['pm_start']},
-   {v:'browser',l:'My browser or phone saves them',s:'Chrome, Safari, iCloud Keychain…',note:'That counts as a password manager.',done:['pm_start'],add:['browser_check']},
-   {v:'reuse',l:'A few I reuse',note:'Most common. Start with email and bank, not everything at once.',add:['reuse_fix','pm_start']},
-   {v:'paper',l:'Written down at home',note:'Safer than reuse. A manager adds breach checks.',add:['pm_start']},
- ]},
- {id:'pmr',short:'Security report',when:a=>a.pw==='pm',q:'When did you last open its security report?',opts:[
-   {v:'recent',l:'Recently, it’s clean',done:['pm_report']},
-   {v:'old',l:'A while ago',add:['pm_report']},
-   {v:'never',l:'Didn’t know it had one',note:'Most do. It lists breached and reused passwords.',add:['pm_report']},
- ]},
- {id:'mail',short:'Email accounts',many:true,q:'Which email accounts do you use?',hint:'Pick all that apply.',always:{add:['hibp','monitor']},opts:[
-   {v:'gmail',l:'Gmail'},{v:'outlook',l:'Outlook or Hotmail'},{v:'icloud',l:'iCloud'},{v:'proton',l:'Proton'},
-   {v:'work',l:'Work or school'},{v:'other',l:'Something else',s:'Own domain, GMX, Yahoo…'},
- ],after:a=>(a.mail||[]).length>1?{add:['other_email']}:{}},
- {id:'main',short:'Main email',when:a=>(a.mail||[]).length>1,q:'Which one gets your password-reset emails?',hint:'That one matters most.',opts:a=>(a.mail||[]).map(v=>({v,l:MAIL[v].l==='another provider'?'Something else':MAIL[v].l}))},
- {id:'signin',short:'Email sign-in',q:a=>{const m=mainOf(a);return m&&!['other','work'].includes(m)?`How do you sign in to ${MAIL[m].l}?`:'How do you sign in to your main email?'},opts:[
-   {v:'pw',l:'Just a password',note:'The single biggest gap. Ten minutes.',add:['email_2fa','recovery']},
-   {v:'sms',l:'Password, then a text message code',note:'Better. An app prompt is stronger.',done:['email_2fa'],add:['email_sms','recovery']},
-   {v:'app',l:'Password, then an app or phone prompt',note:'Solid.',done:['email_2fa','email_sms'],add:['recovery']},
-   {v:'pk',l:'Passkey or security key',note:'Best there is.',done:['email_2fa','email_sms','hwkey','recovery']},
-   {v:'ns',l:'Not sure',note:'The security page shows it.',add:['email_2fa','recovery']},
- ]},
- {id:'phone',short:'Phone',q:'Which phone do you use?',opts:[{v:'ios',l:'iPhone'},{v:'android',l:'Android'},{v:'both',l:'Both'}],always:{add:['lockdown']}},
- {id:'upd',short:'Updates',q:'When your phone offers an update, you…',opts:[
-   {v:'auto',l:'Never see it, it installs itself',done:['auto_updates']},
-   {v:'later',l:'Tap “Later” a lot',note:'Two minutes to switch on.',add:['auto_updates']},
-   {v:'ns',l:'Not sure',add:['auto_updates']},
- ]},
- {id:'where',short:'Country',q:'Where do you live?',hint:'Laws and tools differ.',opts:[
-   {v:'eu',l:'EU',note:'GDPR gives you deletion rights.',add:['brokers_eu','report']},
-   {v:'uk',l:'UK',add:['brokers_eu','report']},
-   {v:'us',l:'US',note:'A credit freeze is the biggest lever.',add:['freeze','brokers_us','report','takedown']},
-   {v:'else',l:'Elsewhere',add:['report']},
- ]},
- {id:'bank',short:'Bank voice ID',q:'Has your bank ever recognised you by voice?',hint:'“My voice is my password” or similar.',opts:[
-   {v:'yes',l:'Yes, I use voice ID',note:'Cloned voices have passed these checks. One call turns it off.',add:['voice_id_off','txn_alerts']},
-   {v:'no',l:'No',done:['voice_id_off'],add:['txn_alerts']},
-   {v:'ns',l:'Not sure',note:'Ask next time you call.',add:['voice_id_off','txn_alerts']},
- ]},
- {id:'call',short:'Panicked call',q:'Someone close calls in a panic, in their voice, asking for money now. What happens?',opts:[
-   {v:'word',l:'I ask for our safe word',done:['safe_word','callback']},
-   {v:'back',l:'I hang up and call them back',note:'Good instinct. A safe word makes it automatic.',done:['callback'],add:['safe_word']},
-   {v:'send',l:'Honestly, I’d probably help',note:'Most people would. Ten minutes fixes it.',add:['safe_word','callback','relatives']},
- ]},
- {id:'online',short:'Voice & face online',q:'How much of your voice and face is online?',opts:[
-   {v:'lots',l:'Videos or podcasts with my voice',add:['voice_list','voice_aud','voicemail','loti']},
-   {v:'photos',l:'Mostly photos',add:['voicemail','loti']},
-   {v:'little',l:'Barely anything',note:'Your voicemail greeting may still be your voice.',add:['voicemail']},
- ]},
- {id:'ai',short:'AI assistants',many:true,q:'Which AI assistants do you use?',hint:'Pick all that apply.',opts:[
-   {v:'chatgpt',l:'ChatGPT',add:['oo_chatgpt']},{v:'claude',l:'Claude',add:['oo_claude']},{v:'gemini',l:'Gemini',add:['oo_gemini']},
-   {v:'copilot',l:'Microsoft Copilot',add:['oo_copilot']},{v:'meta',l:'Meta AI',add:['oo_meta']},{v:'none',l:'None',x:true},
- ],after:a=>(a.ai||[]).some(v=>v!=='none')?{add:['ai_memory']}:{}},
- {id:'agent',short:'AI acting for you',when:a=>(a.ai||[]).some(v=>v!=='none'),q:'Do any of them act for you?',opts:[
-   {v:'chat',l:'No, I just chat'},
-   {v:'read',l:'They read my email or files',add:['ag_list','ag_revoke']},
-   {v:'act',l:'They browse, book or buy',note:'The newest risk. Two settings matter most.',add:['ag_list','ag_confirm','ag_bank','ag_revoke']},
- ]},
- {id:'social',short:'Platforms',many:true,q:'Where else are you?',hint:'Pick all that apply.',opts:[
-   {v:'li',l:'LinkedIn',add:['oo_li']},{v:'meta',l:'Facebook or Instagram',add:['oo_meta']},
-   {v:'yt',l:'My own YouTube channel',add:['yt_like']},{v:'gh',l:'GitHub',add:['oo_gh']},{v:'none',l:'None of these',x:true},
- ]},
-];
+/* ===== content: loaded from content.json ===== */
+let AREAS=[],EMAIL_PROVIDERS={},STEPS=[],QUESTIONS=[],STEP_BY_ID={},QUESTION_BY_ID={};
 
 /* ===== state ===== */
-const KEY='exposure-scale-v1';
+const KEY='exposure-scale-v2';
 let S={a:{},ov:{},tab:'check',cur:null,last:null,open:{},f:{e:'all',k:'all',q:''}};
 try{const s=JSON.parse(localStorage.getItem(KEY)||'null');if(s)S={...S,a:s.a||{},ov:s.ov||{}}}catch(e){}
 const h=location.hash.slice(1);if(['check','plan','all'].includes(h))S.tab=h;
@@ -327,28 +195,46 @@ const save=()=>{try{localStorage.setItem(KEY,JSON.stringify({a:S.a,ov:S.ov}))}ca
 let pick=[]; // working selection for multi questions
 
 /* ===== logic ===== */
-const vis=()=>QS.filter(q=>!q.when||q.when(S.a));
-const optsOf=q=>typeof q.opts==='function'?q.opts(S.a):q.opts;
-const qText=q=>typeof q.q==='function'?q.q(S.a):q.q;
-function eff(q,ans){
+// Conditions in content.json: {question, equals | notEquals | minCount}. minCount ignores exclusive options such as "None".
+function meets(c,a){
+  if(!c)return true;
+  const v=a[c.question];
+  if('equals' in c)return v===c.equals;
+  if('notEquals' in c)return v!==c.notEquals;
+  if('minCount' in c){const q=QUESTION_BY_ID[c.question];return Array.isArray(v)&&v.filter(x=>!optionsOf(q).find(o=>o.value===x)?.exclusive).length>=c.minCount}
+  return true;
+}
+const mainEmail=a=>a.main_email||(Array.isArray(a.email_accounts)&&a.email_accounts.length===1?a.email_accounts[0]:null);
+const visibleQuestions=()=>QUESTIONS.filter(q=>meets(q.showIf,S.a));
+function optionsOf(q){
+  if(!q.optionsFrom)return q.options;
+  const sel=S.a[q.optionsFrom];
+  return Array.isArray(sel)?optionsOf(QUESTION_BY_ID[q.optionsFrom]).filter(o=>sel.includes(o.value)).map(({value,label})=>({value,label})):[];
+}
+const questionText=q=>q.text.replace('{mainEmail}',EMAIL_PROVIDERS[mainEmail(S.a)]?.name||'your main email');
+const linksOf=s=>(s.links||[]).flatMap(l=>l.emailProvider?[EMAIL_PROVIDERS[mainEmail(S.a)]?.[l.emailProvider]].filter(Boolean):meets(l.showIf,S.a)?[l]:[]);
+function effectsOf(q,ans){
   const o={add:[],done:[]};if(ans==null||ans==='skip')return o;
-  const sel=q.many?ans:[ans];
-  optsOf(q).filter(x=>sel.includes(x.v)).forEach(x=>{o.add.push(...(x.add||[]));o.done.push(...(x.done||[]))});
-  [q.always,q.after&&q.after(S.a)].forEach(e=>{if(e){o.add.push(...(e.add||[]));o.done.push(...(e.done||[]))}});
+  const sel=q.multi?ans:[ans];
+  [...optionsOf(q).filter(x=>sel.includes(x.value)),...(q.effects||[]).filter(e=>meets(e.if,S.a))]
+    .forEach(x=>{o.add.push(...(x.add||[]));o.done.push(...(x.done||[]))});
   return o;
 }
-function derived(){const st={};vis().forEach(q=>{const e=eff(q,S.a[q.id]);e.add.forEach(id=>{if(st[id]!=='done')st[id]='todo'});e.done.forEach(id=>st[id]='done')});return st}
+function derived(){const st={};visibleQuestions().forEach(q=>{const e=effectsOf(q,S.a[q.id]);e.add.forEach(id=>{if(st[id]!=='done')st[id]='todo'});e.done.forEach(id=>st[id]='done')});return st}
 function statusMap(){const st=derived(),out={};STEPS.forEach(s=>{const o=S.ov[s.id];const v=o==='off'?undefined:(o||st[s.id]);if(v)out[s.id]=v});return out}
-const lane=s=>s.proj||s.min>60?'proj':s.min<=10?'quick':'eve';
-const LANES=[['quick','Minutes','10 min or less each'],['eve','An evening','Up to an hour'],['proj','Bigger','Purchases, calls or ongoing']];
+// Effort lanes: 10 min or less → Minutes, up to 60 → An evening, longer or with an effortLabel → Bigger
+const lane=s=>s.effortLabel||s.minutes>60?'bigger':s.minutes<=10?'minutes':'evening';
+const LANES=[['minutes','Minutes','10 min or less each'],['evening','An evening','Up to an hour'],['bigger','Bigger','Purchases, calls or ongoing']];
 const fmt=m=>m<60?`${m} min`:`${Math.floor(m/60)} h${m%60?' '+(m%60)+' min':''}`;
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const current=()=>{if(S.cur){const q=vis().find(q=>q.id===S.cur);if(q)return q}return vis().find(q=>!(q.id in S.a))};
-function ansText(q,ans){if(ans==='skip')return 'Skipped';const o=optsOf(q),sel=q.many?ans:[ans];return o.filter(x=>sel.includes(x.v)).map(x=>x.l).join(', ')||'—'}
+const kindLabel=s=>s.kind.length>1?'Cyber + AI':s.kind[0]==='ai'?'AI':'Cyber';
+const impactDots=s=>`<span class="imp" title="Impact ${s.impact} of 3" aria-label="Impact ${s.impact} of 3">${[1,2,3].map(n=>`<i class="${n<=s.impact?'on':''}"></i>`).join('')}</span>`;
+const current=()=>{if(S.cur){const q=visibleQuestions().find(q=>q.id===S.cur);if(q)return q}return visibleQuestions().find(q=>!(q.id in S.a))};
+function ansText(q,ans){if(ans==='skip')return 'Skipped';const o=optionsOf(q),sel=q.multi?ans:[ans];return o.filter(x=>sel.includes(x.value)).map(x=>x.label).join(', ')||'—'}
 function effPills(q){
-  const st=statusMap(),e=eff(q,S.a[q.id]);
+  const st=statusMap(),e=effectsOf(q,S.a[q.id]);
   const add=[...new Set(e.add)].filter(id=>st[id]==='todo'),ok=[...new Set(e.done)];
-  const p=[];if(add.length)p.push(`<span class="pill add">+${add.length} · ${fmt(add.reduce((t,id)=>t+SB[id].min,0))}</span>`);
+  const p=[];if(add.length)p.push(`<span class="pill add">+${add.length} · ${fmt(add.reduce((t,id)=>t+STEP_BY_ID[id].minutes,0))}</span>`);
   if(ok.length)p.push(`<span class="pill ok">✓ ${ok.length} in place</span>`);
   return p.join('')||'<span class="pill">no change</span>';
 }
@@ -364,51 +250,56 @@ function render(){
 
 function tallyHTML(st){
   const rows=LANES.map(([k,l])=>{const ids=STEPS.filter(s=>st[s.id]&&lane(s)===k);const todo=ids.filter(s=>st[s.id]==='todo');
-    return `<div class="lane-row"><b>${l}</b><span class="v">${todo.length?fmt(todo.reduce((t,s)=>t+s.min,0)):'—'}</span>
+    return `<div class="lane-row"><b>${l}</b><span class="v">${todo.length?fmt(todo.reduce((t,s)=>t+s.minutes,0)):'—'}</span>
       <span class="d">${todo.length} to do${ids.length-todo.length?` · ${ids.length-todo.length} in place`:''}</span>
-      <div class="dots">${ids.map(s=>`<i class="${st[s.id]==='done'?'ok':''}" title="${esc(s.t)}"></i>`).join('')}</div></div>`}).join('');
+      <div class="dots">${ids.map(s=>`<i class="${st[s.id]==='done'?'ok':''}" title="${esc(s.title)}"></i>`).join('')}</div></div>`}).join('');
   return `<div class="tally"><div class="label">Your plan so far</div>${rows}</div>`;
 }
 
 function vCheck(st){
-  const V=vis(),q=current(),answered=V.filter(x=>x.id in S.a).length;
+  const V=visibleQuestions(),q=current(),answered=V.filter(x=>x.id in S.a).length;
   const lastQ=S.last&&V.find(x=>x.id===S.last);
-  const reply=lastQ&&S.a[lastQ.id]!=='skip'?(()=>{const sel=lastQ.many?S.a[lastQ.id]:[S.a[lastQ.id]];const note=optsOf(lastQ).filter(x=>sel.includes(x.v)).map(x=>x.note).filter(Boolean).join(' ');
-    return `<div class="reply"><span class="you">${esc(lastQ.short)} · ${esc(ansText(lastQ,S.a[lastQ.id]))}</span>${note?`<span>${esc(note)}</span>`:''}<div class="eff">${effPills(lastQ)}</div></div>`})():'';
+  const reply=lastQ&&S.a[lastQ.id]!=='skip'?(()=>{const sel=lastQ.multi?S.a[lastQ.id]:[S.a[lastQ.id]];const note=optionsOf(lastQ).filter(x=>sel.includes(x.value)).map(x=>x.note).filter(Boolean).join(' ');
+    return `<div class="reply"><span class="you">${esc(lastQ.label)} · ${esc(ansText(lastQ,S.a[lastQ.id]))}</span>${note?`<span>${esc(note)}</span>`:''}<div class="eff">${effPills(lastQ)}</div></div>`})():'';
   let stage;
   if(q){
-    const opts=optsOf(q);
-    if(q.many&&!pick.__for){pick=Array.isArray(S.a[q.id])?[...S.a[q.id]]:[];pick.__for=q.id}
-    if(q.many&&pick.__for!==q.id){pick=Array.isArray(S.a[q.id])?[...S.a[q.id]]:[];pick.__for=q.id}
+    const opts=optionsOf(q);
+    if(q.multi&&!pick.__for){pick=Array.isArray(S.a[q.id])?[...S.a[q.id]]:[];pick.__for=q.id}
+    if(q.multi&&pick.__for!==q.id){pick=Array.isArray(S.a[q.id])?[...S.a[q.id]]:[];pick.__for=q.id}
     const prevIdx=V.indexOf(q)-1;
     stage=`<div class="q" id="q-${q.id}">
-      <h2>${esc(qText(q))}</h2>${q.hint?`<p class="hint">${esc(q.hint)}</p>`:''}
-      <div class="opts">${opts.map((o,i)=>{const on=q.many?pick.includes(o.v):S.a[q.id]===o.v;
-        return `<button type="button" class="opt" data-pick="${o.v}" aria-pressed="${on}"><span class="k">${i+1}</span><span class="l">${esc(o.l)}${o.s?`<span class="s">${esc(o.s)}</span>`:''}</span>${q.many?'<span class="box"></span>':''}</button>`}).join('')}</div>
-      <div class="qfoot">${q.many?`<button type="button" class="btn" data-next ${pick.length?'':'disabled'}>Continue</button>`:''}
+      <h2>${esc(questionText(q))}</h2>${q.hint?`<p class="hint">${esc(q.hint)}</p>`:''}
+      <div class="opts">${opts.map((o,i)=>{const on=q.multi?pick.includes(o.value):S.a[q.id]===o.value;
+        return `<button type="button" class="opt" data-pick="${o.value}" aria-pressed="${on}"><span class="k">${i+1}</span><span class="l">${esc(o.label)}${o.detail?`<span class="s">${esc(o.detail)}</span>`:''}</span>${q.multi?'<span class="box"></span>':''}</button>`}).join('')}</div>
+      <div class="qfoot">${q.multi?`<button type="button" class="btn" data-next ${pick.length?'':'disabled'}>Continue</button>`:''}
         ${prevIdx>=0?`<button type="button" class="ghost" data-back="${V[prevIdx].id}">Back</button>`:''}
         <button type="button" class="ghost" data-skip>Skip</button>
-        <span class="keys mono">${q.many?'1–'+opts.length+' toggle · Enter':'press 1–'+opts.length}</span></div></div>`;
+        <span class="keys mono">${q.multi?'1–'+opts.length+' toggle · Enter':'press 1–'+opts.length}</span></div></div>`;
   }else{
-    const todo=STEPS.filter(s=>st[s.id]==='todo'),quick=todo.filter(s=>lane(s)==='quick');
+    const todo=STEPS.filter(s=>st[s.id]==='todo'),quick=todo.filter(s=>lane(s)==='minutes');
     stage=`<div class="q fin"><h2>That’s the picture.</h2>
-      <p>${todo.length} steps to do, about ${fmt(todo.reduce((t,s)=>t+s.min,0))} in total. ${quick.length} of them take minutes.</p>
+      <p>${todo.length} steps to do, about ${fmt(todo.reduce((t,s)=>t+s.minutes,0))} in total. ${quick.length} of them take minutes.</p>
       <div class="qfoot"><button type="button" class="btn" data-tab="plan">Open your plan</button><button type="button" class="ghost" data-tab="all">Browse all steps</button><button type="button" class="ghost" data-restart>Start over</button></div></div>`;
   }
-  const answers=V.filter(x=>x.id in S.a).map(x=>`<button type="button" data-edit="${x.id}"><span>${esc(x.short)}</span><span class="mono" style="font-size:.74rem;color:var(--muted)">edit</span><span class="a">${esc(ansText(x,S.a[x.id]))}</span></button>`).join('');
+  const answers=V.filter(x=>x.id in S.a).map(x=>`<button type="button" data-edit="${x.id}"><span>${esc(x.label)}</span><span class="mono" style="font-size:.74rem;color:var(--muted)">edit</span><span class="a">${esc(ansText(x,S.a[x.id]))}</span></button>`).join('');
   return `<div class="check"><div class="stage">
       <div class="prog"><div class="track"><i style="width:${V.length?answered/V.length*100:0}%"></i></div><span class="mono">${answered}/${V.length}</span></div>
       ${reply}${stage}</div>
     <aside class="side">${tallyHTML(st)}${answers?`<div><div class="label" style="margin:0 0 6px 8px">Your answers</div><div class="answers">${answers}</div></div>`:''}</aside></div>`;
 }
 
+function moreHTML(s){
+  const L=linksOf(s);
+  return `<div class="more"><span class="why">${esc(s.why)}</span>${L.length?`<div class="links">${L.map(l=>`<a class="go" href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.label)}</a>`).join('')}</div>`:''}</div>`;
+}
+
 function card(s,stv){
-  const L=s.L?s.L(S.a):[],open=!!S.open[s.id];
+  const open=!!S.open[s.id];
   return `<div class="card ${stv==='done'?'is-done':''}">
     <button type="button" class="tick" data-done="${s.id}" aria-pressed="${stv==='done'}" aria-label="Mark done"></button>
-    <button type="button" class="ct" data-open="${s.id}" aria-expanded="${open}">${esc(s.t)}</button>
-    <div class="meta"><span class="mono">${s.proj?esc(s.proj):fmt(s.min)}</span><span class="imp" title="Impact">${[1,2,3].map(n=>`<i class="${n<=s.imp?'on':''}"></i>`).join('')}</span><span>${s.k==='a'?'AI':s.k==='c'?'Cyber':'Cyber + AI'}</span></div>
-    ${open?`<div class="more"><span class="why">${esc(s.w)}</span>${L.length?`<div class="links">${L.map(([l,u])=>`<a class="go" href="${u}" target="_blank" rel="noopener">${esc(l)}</a>`).join('')}</div>`:''}</div>`:''}
+    <button type="button" class="ct" data-open="${s.id}" aria-expanded="${open}">${esc(s.title)}</button>
+    <div class="meta"><span class="mono">${s.effortLabel?esc(s.effortLabel):fmt(s.minutes)}</span>${impactDots(s)}<span>${kindLabel(s)}</span></div>
+    ${open?moreHTML(s):''}
   </div>`;
 }
 
@@ -416,35 +307,35 @@ function vPlan(st){
   const ids=STEPS.filter(s=>st[s.id]);
   if(!ids.length)return `<div class="empty"><p>Your plan fills in as you answer. About three minutes.</p><button type="button" class="btn" data-tab="check">Start the check</button></div>`;
   const todo=ids.filter(s=>st[s.id]==='todo'),done=ids.filter(s=>st[s.id]==='done');
-  const base=todo.filter(s=>s.tier===1),bm=base.reduce((t,s)=>t+s.min,0);
-  const head=base.length?`<div class="big">${fmt(bm)}<small>to baseline</small></div><p>${base.length} baseline ${base.length===1?'step':'steps'} left. Everything in your plan: ${fmt(todo.reduce((t,s)=>t+s.min,0))} across ${todo.length} steps.</p>`
-    :`<div class="big">Baseline reached</div><p>${todo.length} further steps, about ${fmt(todo.reduce((t,s)=>t+s.min,0))}.</p>`;
-  const sortF=(a,b)=>(st[a.id]==='done')-(st[b.id]==='done')||b.imp-a.imp||a.min-b.min;
+  const base=todo.filter(s=>s.tier===1),bm=base.reduce((t,s)=>t+s.minutes,0);
+  const head=base.length?`<div class="big">${fmt(bm)}<small>to baseline</small></div><p>${base.length} baseline ${base.length===1?'step':'steps'} left. Everything in your plan: ${fmt(todo.reduce((t,s)=>t+s.minutes,0))} across ${todo.length} steps.</p>`
+    :`<div class="big">Baseline reached</div><p>${todo.length} further steps, about ${fmt(todo.reduce((t,s)=>t+s.minutes,0))}.</p>`;
+  const sortF=(a,b)=>(st[a.id]==='done')-(st[b.id]==='done')||b.impact-a.impact||a.minutes-b.minutes;
   const lanes=LANES.map(([k,l,d])=>{const its=todo.filter(s=>lane(s)===k).sort(sortF);
     return `<section class="lane"><h3>${l}</h3><div class="sum">${d} · ${its.length} ${its.length===1?'step':'steps'}</div>${its.map(s=>card(s,st[s.id])).join('')||'<div class="sum">Nothing here.</div>'}</section>`}).join('');
   return `<div class="plan"><div class="gauge">${head}<div class="gbar"><i style="width:${done.length/ids.length*100}%"></i><b style="width:${todo.length/ids.length*100}%"></b></div><p class="mono" style="font-size:.8rem">${done.length} in place · ${todo.length} to do</p></div>
     <div class="lanes">${lanes}</div>
-    ${done.length?`<details class="inplace"><summary>Already in place (${done.length})</summary><ul>${done.map(s=>`<li>${esc(s.t)} <button type="button" class="ghost" style="padding:0 4px;font-size:.8rem" data-undo="${s.id}">undo</button></li>`).join('')}</ul></details>`:''}</div>`;
+    ${done.length?`<details class="inplace"><summary>Already in place (${done.length})</summary><ul>${done.map(s=>`<li>${esc(s.title)} <button type="button" class="ghost" style="padding:0 4px;font-size:.8rem" data-undo="${s.id}">undo</button></li>`).join('')}</ul></details>`:''}</div>`;
 }
 
 function vAll(st){
   const f=S.f,qq=f.q.trim().toLowerCase();
-  const match=s=>(f.e==='all'||lane(s)===f.e)&&(f.k==='all'||s.k.includes(f.k))&&(!qq||(s.t+' '+s.w).toLowerCase().includes(qq));
+  const match=s=>(f.e==='all'||lane(s)===f.e)&&(f.k==='all'||s.kind.includes(f.k))&&(!qq||(s.title+' '+s.why).toLowerCase().includes(qq));
   const seg=(key,opts)=>`<div class="fseg" role="group">${opts.map(([v,l])=>`<button type="button" data-f="${key}" data-v="${v}" aria-pressed="${f[key]===v}">${l}</button>`).join('')}</div>`;
-  let n=0;
-  const areas=AREAS.map(([id,name])=>{const its=STEPS.filter(s=>s.a===id&&match(s));n+=its.length;if(!its.length)return '';
-    return `<section class="area"><h3>${name}<span class="n">${its.length}</span></h3><div class="rows">${its.map(s=>{const v=st[s.id],open=!!S.open[s.id],L=s.L?s.L(S.a):[];
-      return `<div class="row"><button type="button" class="rt" data-open="${s.id}" aria-expanded="${open}"><span>${esc(s.t)}</span><span class="meta" style="padding:0"><span class="mono">${s.proj?esc(s.proj):fmt(s.min)}</span><span class="imp">${[1,2,3].map(k=>`<i class="${k<=s.imp?'on':''}"></i>`).join('')}</span><span>${s.k==='a'?'AI':s.k==='c'?'Cyber':'Cyber + AI'}</span><span>check: ${s.m}</span></span></button>
+  const areas=AREAS.map(({id,name})=>{const its=STEPS.filter(s=>s.area===id&&match(s));if(!its.length)return '';
+    return `<section class="area"><h3>${name}<span class="n">${its.length}</span></h3><div class="rows">${its.map(s=>{const v=st[s.id],open=!!S.open[s.id];
+      return `<div class="row"><button type="button" class="rt" data-open="${s.id}" aria-expanded="${open}"><span>${esc(s.title)}</span><span class="meta"><span class="mono">${s.effortLabel?esc(s.effortLabel):fmt(s.minutes)}</span>${impactDots(s)}<span>${kindLabel(s)}</span><span>check: ${s.checkMethod}</span></span></button>
         <button type="button" class="st ${v||''}" data-cycle="${s.id}">${v==='todo'?'In plan':v==='done'?'Done':'Add'}</button>
-        ${open?`<div class="more"><span class="why">${esc(s.w)}</span>${L.length?`<div class="links">${L.map(([l,u])=>`<a class="go" href="${u}" target="_blank" rel="noopener">${esc(l)}</a>`).join('')}</div>`:''}</div>`:''}</div>`}).join('')}</div></section>`}).join('');
+        ${open?moreHTML(s):''}</div>`}).join('')}</div></section>`}).join('');
   return `<div class="all"><div class="filters"><input id="search" type="search" placeholder="Search steps" value="${esc(f.q)}" aria-label="Search steps">
-    ${seg('e',[['all','Any effort'],['quick','Minutes'],['eve','Evening'],['proj','Bigger']])}${seg('k',[['all','All'],['c','Cyber'],['a','AI']])}</div>
+    ${seg('e',[['all','Any effort'],['minutes','Minutes'],['evening','Evening'],['bigger','Bigger']])}${seg('k',[['all','All'],['cyber','Cyber'],['ai','AI']])}</div>
     ${areas||'<p class="nores">No steps match.</p>'}</div>`;
 }
 
 /* ===== actions ===== */
 function answer(q,v){S.a[q.id]=v;S.last=q.id;S.cur=null;pick=[];
-  if(q.id==='mail'&&S.a.main&&!(v||[]).includes(S.a.main))delete S.a.main;
+  // drop answers to questions whose options came from this one, if that choice is gone
+  QUESTIONS.filter(x=>x.optionsFrom===q.id&&x.id in S.a&&!(Array.isArray(v)&&v.includes(S.a[x.id]))).forEach(x=>delete S.a[x.id]);
   save();render();focusStage()}
 function focusStage(){const b=document.querySelector('.q .opt, .q .btn');if(b)b.focus({preventScroll:true})}
 document.addEventListener('click',e=>{
@@ -452,8 +343,8 @@ document.addEventListener('click',e=>{
   if(d.tab){S.tab=d.tab;try{history.replaceState(null,'','#'+d.tab)}catch(_){}render();window.scrollTo(0,0);return}
   const q=current();
   if(d.pick!==undefined&&q){
-    if(q.many){const o=optsOf(q).find(x=>x.v===d.pick);
-      if(o.x)pick=pick.includes(d.pick)?[]:[d.pick];else{pick=pick.filter(v=>!optsOf(q).find(x=>x.v===v).x);pick=pick.includes(d.pick)?pick.filter(v=>v!==d.pick):[...pick,d.pick]}
+    if(q.multi){const o=optionsOf(q).find(x=>x.value===d.pick);
+      if(o.exclusive)pick=pick.includes(d.pick)?[]:[d.pick];else{pick=pick.filter(v=>!optionsOf(q).find(x=>x.value===v).exclusive);pick=pick.includes(d.pick)?pick.filter(v=>v!==d.pick):[...pick,d.pick]}
       pick.__for=q.id;render();const n=document.querySelector(`[data-pick="${d.pick}"]`);if(n)n.focus({preventScroll:true});return}
     answer(q,d.pick);return}
   if(d.next!==undefined&&q&&pick.length){answer(q,[...pick]);return}
@@ -470,11 +361,17 @@ document.addEventListener('input',e=>{if(e.target.id==='search'){S.f.q=e.target.
 document.addEventListener('keydown',e=>{
   if(S.tab!=='check'||e.target.tagName==='INPUT'||e.metaKey||e.ctrlKey||e.altKey)return;
   const q=current();if(!q)return;
-  const n=parseInt(e.key,10),opts=optsOf(q);
-  if(n>=1&&n<=opts.length){e.preventDefault();document.querySelector(`[data-pick="${opts[n-1].v}"]`).click()}
-  else if(e.key==='Enter'&&q.many&&pick.length&&!e.target.closest('.opt')){e.preventDefault();answer(q,[...pick])}
+  const n=parseInt(e.key,10),opts=optionsOf(q);
+  if(n>=1&&n<=opts.length){e.preventDefault();document.querySelector(`[data-pick="${opts[n-1].value}"]`).click()}
+  else if(e.key==='Enter'&&q.multi&&pick.length&&!e.target.closest('.opt')){e.preventDefault();answer(q,[...pick])}
 });
-render();
+fetch('content.json').then(r=>r.json()).then(c=>{
+  ({areas:AREAS,emailProviders:EMAIL_PROVIDERS,steps:STEPS,questions:QUESTIONS}=c);
+  STEP_BY_ID=Object.fromEntries(STEPS.map(s=>[s.id,s]));
+  QUESTION_BY_ID=Object.fromEntries(QUESTIONS.map(q=>[q.id,q]));
+  $('checked').textContent=`Links last checked ${new Date(c.linksChecked+'T12:00').toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})}.`;
+  render();
+}).catch(()=>{$('view').innerHTML='<p class="nores">Couldn’t load the questions. Reload the page.</p>'});
 </script>
 </body>
 </html>

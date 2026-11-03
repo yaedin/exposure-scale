@@ -5,25 +5,30 @@ A guided self-check of a person's cybersecurity and AI exposure. It asks one que
 Goal of this stage: show that the idea works (adaptive onboarding, a quick sense of what's easy vs. hard), not full coverage.
 
 ## Ground rules
-- **One file, no build step.** Everything lives in `index.html`; fonts in `fonts/`. Keep it that way unless there is a clear reason.
+- **No build step.** Code and styles live in `index.html`, content in `content.json`, fonts in `fonts/`. The page fetches `content.json`, so preview it through a local server (`python3 -m http.server`), not by opening the file.
 - **No outside requests.** No CDNs, analytics, embeds or Google Fonts. Answers stay in `localStorage` only. The footer's privacy note depends on this; update it if anything changes.
 - **Lean copy.** Short, plain sentences. No defensive caveats, no filler. The owner explicitly dislikes verbose text.
 - **Comfort first.** One question per screen, number-key shortcuts, instant feedback after each answer.
 - Light and dark themes come from CSS tokens at the top of the style block. Use the tokens, not literal colors.
 
 ## How it works
-- `QS`: questions. Each option can `add` step ids to the plan or mark them `done`. `when` hides a question, `many` makes it multi-select, `x` marks an exclusive option ("None").
-- `STEPS`: actions with `min` (minutes), `imp` (impact 1–3), `tier` (1 baseline, 2 recommended, 3 advanced), `k` (`c` cyber, `a` AI), `m` (how a full build could check it: auto/link/self), and `L` (links; can depend on answers).
-- Effort lanes come from `min`: ≤10 min "Minutes", ≤60 "An evening", else "Bigger" (or when `proj` is set).
+- `content.json` holds all content: `areas`, `emailProviders`, `steps`, `questions`, and `linksChecked` (shown in the footer).
+- `questions`: each option can `add` step ids to the plan or mark them `done`. `showIf` hides a question, `multi` makes it multi-select, `exclusive` marks an option like "None", `effects` add steps whenever the question is answered (optionally with `if`), `optionsFrom` reuses another question's selected options. `{mainEmail}` in `text` becomes the main email provider's name.
+- `steps`: `minutes`, `impact` (1–3), `tier` (1 baseline, 2 recommended, 3 advanced), `kind` (`cyber`, `ai`), `checkMethod` (how a full build could check it: auto/link/self), `effortLabel` (replaces the time and forces "Bigger"), `links`. A link is `{label, url, showIf?}` or `{emailProvider: "security" | "connectedApps"}` for the main email provider's page.
+- Conditions (`showIf`, `if`): `{question, equals | notEquals | minCount}`. `minCount` ignores exclusive options.
+- Ids are stored in visitors' `localStorage` (key `exposure-scale-v2`). Renaming a question, option value or step id resets that answer for returning visitors.
+- Effort lanes come from `minutes`: ≤10 "Minutes", ≤60 "An evening", else "Bigger" (or when `effortLabel` is set). The three dots on each step are impact.
 - Tabs: Check (onboarding), Plan (lanes + time to baseline), All steps (catalog with filters).
 - Nine areas: accounts, devices, data already out there, money, voice & likeness, family & habits, data you give AI, AI acting for you, response. Organized by what's being protected; each step is tagged cyber, AI or both.
 
+## Checking content
+`python3 tools/check_content.py` checks that every id in `content.json` resolves and that every link responds. Sites that block scripts (FTC consumer pages, Facebook) are listed for a browser check. Links behind a sign-in only prove the page exists; whether they land on the right setting needs a signed-in check. Update `linksChecked` after a full pass.
+
 ## Open issues
-1. **Links not verified.** Several settings URLs were written from memory. Check each one.
-2. **No sources per step.** Plan: add a source URL and a "last checked" date to each step, plus a link check that runs on a schedule (GitHub Action).
-3. **Impressum.** Not added. Depends on the owner's country of residence (not Germany). Ask before adding anything.
+1. **Signed-in settings links unverified.** Reachable as of 2026-11-03, but not checked while signed in: Google security/connections, Gemini activity, Microsoft security/app access, YouTube Studio, GitHub Copilot, LinkedIn AI setting, ChatGPT and Claude settings.
+2. **No sources per step.** Plan: add a source URL to each step. A scheduled link check (GitHub Action running `tools/check_content.py`) is deferred.
+3. **Impressum.** Deferred by the owner. Ask before adding anything.
 4. Content is US/EU-focused; other regions only get generic steps.
-5. Possible later step: move `QS`/`STEPS` into a JSON file so content can be edited without touching code.
 
 ## Research behind the content (as of Oct–Nov 2026)
 - Mozilla Monitor Plus (broker removal) shut down 17 Dec 2025; the free breach monitoring continues.
