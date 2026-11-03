@@ -130,7 +130,6 @@ h1{font:700 1.45rem/1 var(--f-display);letter-spacing:-.02em;margin:0}
 .meta{grid-column:2;display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:.78rem;color:var(--muted)}
 .imp{display:inline-flex;gap:2px}.imp i{width:6px;height:6px;border-radius:50%;background:var(--line)}.imp i.on{background:var(--ink)}
 .more{grid-column:2;display:grid;gap:8px;font-size:.88rem;padding-top:4px}
-.more .why{color:var(--muted)}
 .links{display:flex;gap:6px;flex-wrap:wrap}
 .go{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:7px;background:var(--chip);text-decoration:none;font-size:.82rem;font-weight:500}
 .go::after{content:"↗";font-size:.8em;color:var(--muted)}
@@ -288,18 +287,18 @@ function vCheck(st){
     <aside class="side">${tallyHTML(st)}${answers?`<div><div class="label" style="margin:0 0 6px 8px">Your answers</div><div class="answers">${answers}</div></div>`:''}</aside></div>`;
 }
 
-function moreHTML(s){
-  const L=linksOf(s);
-  return `<div class="more"><span class="why">${esc(s.why)}</span>${L.length?`<div class="links">${L.map(l=>`<a class="go" href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.label)}</a>`).join('')}</div>`:''}</div>`;
-}
+// Only steps with links open; the title becomes the toggle
+const opens=s=>linksOf(s).length>0;
+const toggleAttrs=s=>opens(s)?`type="button" data-open="${s.id}" aria-expanded="${!!S.open[s.id]}"`:'';
+const moreHTML=s=>S.open[s.id]&&opens(s)?`<div class="more"><div class="links">${linksOf(s).map(l=>`<a class="go" href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.label)}</a>`).join('')}</div></div>`:'';
+const tag=s=>opens(s)?'button':'div';
 
 function card(s,stv){
-  const open=!!S.open[s.id];
   return `<div class="card ${stv==='done'?'is-done':''}">
     <button type="button" class="tick" data-done="${s.id}" aria-pressed="${stv==='done'}" aria-label="Mark done"></button>
-    <button type="button" class="ct" data-open="${s.id}" aria-expanded="${open}">${esc(s.title)}</button>
+    <${tag(s)} class="ct" ${toggleAttrs(s)}>${esc(s.title)}</${tag(s)}>
     <div class="meta"><span class="mono">${s.effortLabel?esc(s.effortLabel):fmt(s.minutes)}</span>${impactDots(s)}<span>${kindLabel(s)}</span></div>
-    ${open?moreHTML(s):''}
+    ${moreHTML(s)}
   </div>`;
 }
 
@@ -320,15 +319,16 @@ function vPlan(st){
 
 function vAll(st){
   const f=S.f,qq=f.q.trim().toLowerCase();
-  const match=s=>(f.e==='all'||lane(s)===f.e)&&(f.k==='all'||s.kind.includes(f.k))&&(!qq||(s.title+' '+s.why).toLowerCase().includes(qq));
-  const seg=(key,opts)=>`<div class="fseg" role="group">${opts.map(([v,l])=>`<button type="button" data-f="${key}" data-v="${v}" aria-pressed="${f[key]===v}">${l}</button>`).join('')}</div>`;
+  const match=s=>(f.e==='all'||lane(s)===f.e)&&(f.k==='all'||s.kind.includes(f.k))&&(!qq||s.title.toLowerCase().includes(qq));
+  const seg=(key,cur,opts)=>`<div class="fseg" role="group">${opts.map(([v,l])=>`<button type="button" data-f="${key}" data-v="${v}" aria-pressed="${cur===v}">${l}</button>`).join('')}</div>`;
+  const withLinks=STEPS.filter(opens),rows=withLinks.every(s=>S.open[s.id])?'open':withLinks.some(s=>S.open[s.id])?'':'closed';
   const areas=AREAS.map(({id,name})=>{const its=STEPS.filter(s=>s.area===id&&match(s));if(!its.length)return '';
-    return `<section class="area"><h3>${name}<span class="n">${its.length}</span></h3><div class="rows">${its.map(s=>{const v=st[s.id],open=!!S.open[s.id];
-      return `<div class="row"><button type="button" class="rt" data-open="${s.id}" aria-expanded="${open}"><span>${esc(s.title)}</span><span class="meta"><span class="mono">${s.effortLabel?esc(s.effortLabel):fmt(s.minutes)}</span>${impactDots(s)}<span>${kindLabel(s)}</span><span>check: ${s.checkMethod}</span></span></button>
+    return `<section class="area"><h3>${name}<span class="n">${its.length}</span></h3><div class="rows">${its.map(s=>{const v=st[s.id];
+      return `<div class="row"><${tag(s)} class="rt" ${toggleAttrs(s)}><span>${esc(s.title)}</span><span class="meta"><span class="mono">${s.effortLabel?esc(s.effortLabel):fmt(s.minutes)}</span>${impactDots(s)}<span>${kindLabel(s)}</span></span></${tag(s)}>
         <button type="button" class="st ${v||''}" data-cycle="${s.id}">${v==='todo'?'In plan':v==='done'?'Done':'Add'}</button>
-        ${open?moreHTML(s):''}</div>`}).join('')}</div></section>`}).join('');
+        ${moreHTML(s)}</div>`}).join('')}</div></section>`}).join('');
   return `<div class="all"><div class="filters"><input id="search" type="search" placeholder="Search steps" value="${esc(f.q)}" aria-label="Search steps">
-    ${seg('e',[['all','Any effort'],['minutes','Minutes'],['evening','Evening'],['bigger','Bigger']])}${seg('k',[['all','All'],['cyber','Cyber'],['ai','AI']])}</div>
+    ${seg('e',f.e,[['all','Any effort'],['minutes','Minutes'],['evening','Evening'],['bigger','Bigger']])}${seg('k',f.k,[['all','All'],['cyber','Cyber'],['ai','AI']])}${seg('rows',rows,[['closed','Hide links'],['open','Show links']])}</div>
     ${areas||'<p class="nores">No steps match.</p>'}</div>`;
 }
 
@@ -355,6 +355,7 @@ document.addEventListener('click',e=>{
   if(d.done){const st=statusMap();S.ov[d.done]=st[d.done]==='done'?'todo':'done';save();render();const n=document.querySelector(`[data-done="${d.done}"]`);if(n)n.focus({preventScroll:true});return}
   if(d.undo){S.ov[d.undo]='todo';save();render();return}
   if(d.cycle){const v=statusMap()[d.cycle];S.ov[d.cycle]=!v?'todo':v==='todo'?'done':'off';save();render();const n=document.querySelector(`[data-cycle="${d.cycle}"]`);if(n)n.focus({preventScroll:true});return}
+  if(d.f==='rows'){STEPS.forEach(s=>S.open[s.id]=d.v==='open');render();return}
   if(d.f){S.f[d.f]=d.v;render();return}
 });
 document.addEventListener('input',e=>{if(e.target.id==='search'){S.f.q=e.target.value;const pos=e.target.selectionStart;render();const s=$('search');s.focus();try{s.setSelectionRange(pos,pos)}catch(_){}}});
