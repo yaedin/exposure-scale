@@ -16,7 +16,9 @@ Questions and steps live in `content.json`: `questions` and `steps` (actions wit
 ## In your terminal: the agent skill
 `skills/exposure-scale/` is an [Agent Skill](https://agentskills.io) with the same questions and plan, plus help doing the steps: read-only checks on your computer, opening the right settings page, drafting letters and family messages, and reviewing what your AI agents can reach. It never changes settings for you. Needs Python 3.8+; answers stay in `~/.exposure-scale/`.
 
-Copy the folder to where your agent looks for skills:
+Working inside this repo, it's already installed: `.claude/skills/`, `.agents/skills/` and `.gemini/skills/` link to it, so Claude Code, Codex and Gemini CLI find it automatically. On Windows, clone with `git clone -c core.symlinks=true` (needs Developer Mode) or copy the folder instead.
+
+To use it anywhere, copy the folder to where your agent looks for skills:
 
 | Agent | Folder |
 |---|---|

@@ -28,6 +28,7 @@ Goal of this stage: show that the idea works (adaptive onboarding, a quick sense
 - `node tools/compare_logic.mjs` checks that the script and `index.html` give the same questions, plan and links on random answers. Run it after changing logic in either.
 - `python3 skills/exposure-scale/scripts/exposure.py validate` checks `assist.json`, probes, templates and the `SKILL.md` header.
 - `evals/exposure-scale.json` holds scenarios to rerun on several models after changing `SKILL.md`.
+- `.claude/skills/`, `.agents/skills/` and `.gemini/skills/` hold relative symlinks to `skills/exposure-scale` so agents opened in this repo pick it up. Edit the real folder, not the links.
 - Windows and Linux checks are untested.
 
 ## Checking content
