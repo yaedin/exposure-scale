@@ -16,27 +16,38 @@ BLOCKS_SCRIPTS = {"consumer.ftc.gov", "www.facebook.com", "ico.org.uk"}
 UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36"
 
 content = json.load(open("content.json"))
-steps = {s["id"] for s in content["steps"]}
-areas = {a["id"] for a in content["areas"]}
+steps = {s["id"]: s for s in content["steps"]}
+levels = {l["n"] for l in content["levels"]}
+parts = {p["id"] for p in content["parts"]}
 questions = {q["id"]: q for q in content["questions"]}
 problems = []
 
 # references
 for s in content["steps"]:
-    if s["area"] not in areas:
-        problems.append(f"step {s['id']}: unknown area {s['area']}")
+    if s["level"] not in levels | {0}:
+        problems.append(f"step {s['id']}: unknown level {s['level']}")
     for l in s.get("links", []):
         cond = l.get("showIf")
-        if cond and cond["question"] not in questions:
-            problems.append(f"step {s['id']}: link condition on unknown question {cond['question']}")
+        if cond and cond.get("question", "") not in questions and "minLevel" not in cond:
+            problems.append(f"step {s['id']}: link condition on unknown question {cond.get('question')}")
+for l in content["levels"]:
+    for sid in l["guards"] + l["climb"]:
+        if sid not in steps:
+            problems.append(f"level {l['n']}: unknown step {sid}")
+        elif steps[sid]["level"] != l["n"] or bool(steps[sid].get("up")) != (sid in l["climb"]):
+            problems.append(f"level {l['n']}: step {sid} has level {steps[sid]['level']} and up={bool(steps[sid].get('up'))}")
 for q in content["questions"]:
+    if q.get("part") not in parts:
+        problems.append(f"question {q['id']}: unknown part {q.get('part')}")
     for part in q.get("options", []) + q.get("effects", []):
         for sid in part.get("add", []) + part.get("done", []):
             if sid not in steps:
                 problems.append(f"question {q['id']}: unknown step {sid}")
     for cond in [q.get("showIf")] + [e.get("if") for e in q.get("effects", [])]:
-        if cond and cond["question"] not in questions:
-            problems.append(f"question {q['id']}: condition on unknown question {cond['question']}")
+        if cond and "minLevel" not in cond and cond.get("question") not in questions:
+            problems.append(f"question {q['id']}: condition on unknown question {cond.get('question')}")
+        if cond and "minLevel" in cond and q.get("place"):
+            problems.append(f"question {q['id']}: placement questions can't depend on the level")
     if q.get("optionsFrom") and q["optionsFrom"] not in questions:
         problems.append(f"question {q['id']}: options from unknown question {q['optionsFrom']}")
 
@@ -54,6 +65,8 @@ for s in content["steps"]:
     for l in s.get("links", []):
         if "url" in l:
             urls.setdefault(l["url"], []).append(s["id"])
+for l in content["sources"]:
+    urls.setdefault(l["url"], []).append("sources")
 
 
 def fetch(url):

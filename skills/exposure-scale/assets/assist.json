@@ -105,5 +105,64 @@
   },
   "deepfake_takedown": {
     "how": "StopNCII makes a fingerprint of the image on your device so platforms can block it. The image itself isn't uploaded."
+  },
+  "temporary_chat": {
+    "how": "ChatGPT: the Temporary button at the top of a new chat. Claude: the ghost icon at the top right (not inside projects). Neither feeds memory or training; both keep a copy for up to 30 days."
+  },
+  "up_real_task": {
+    "how": "Pick something due this week, not a test question. Give it the material, ask for a first version, then push back two or three times until it's good."
+  },
+  "up_context": {
+    "how": "In the personalization or profile settings, write a few lines: your role, what you work on, how you like answers (length, tone, what to skip)."
+  },
+  "think_first": {
+    "how": "Before asking about anything that matters, write two or three lines with your own answer. Then compare. It keeps the thinking yours."
+  },
+  "work_rules": {
+    "how": "Find your employer's AI policy or ask IT which tools are approved. Use those for work files. Keep work documents out of personal accounts."
+  },
+  "up_brief": {
+    "how": "Three parts: the goal and who it's for, the context it can't guess (files, constraints, past attempts), and what good looks like (length, format, an example).",
+    "template": "assets/templates/brief.md"
+  },
+  "up_project": {
+    "how": "Create a project, upload the files it should always know, and write the instructions once. Every chat inside it starts with that context."
+  },
+  "verify_rule": {
+    "how": "Before anything goes out under your name: open every source, recheck every number, and confirm every quote and citation exists."
+  },
+  "keep_skills": {
+    "how": "Pick the part of your work you'd want to still be good at in five years. Do it yourself now and then, and compare with what AI would have done."
+  },
+  "up_connect": {
+    "how": "Start read-only with low stakes: a calendar or one folder. Check what the connection can do before you approve it."
+  },
+  "up_schedule": {
+    "how": "Pick a task you already do every week (a summary, a digest, a check). Write the prompt once, set the schedule, and read the first few runs closely."
+  },
+  "split_read_send": {
+    "how": "An agent that reads email or web pages shouldn't also be able to send, post or share on its own. Split it in two, or keep a confirm on every send."
+  },
+  "review_schedule": {
+    "how": "Open the scheduled tasks page in each assistant. Delete what you no longer read and check what each one can reach."
+  },
+  "vet_skills": {
+    "how": "Before installing a plugin, skill or connector, check who publishes it and what it can reach. Remove what you don't use.",
+    "review": "Go through each plugin, skill and connected tool `check vet_skills` lists. For each: who makes it, what it can reach, still used? Suggest removing the rest; changes follow the config-file rule."
+  },
+  "up_checks": {
+    "how": "Write the checklist you'd use yourself: what must be true before it's done. Tell the agent to check its work against it and report what failed."
+  },
+  "up_workflow": {
+    "how": "Choose a workflow where a mistake is cheap to undo: drafts not sends, a test account, a copy of the files. Set limits first, then let it run end to end."
+  },
+  "spend_limits": {
+    "how": "Give it a virtual card with a low limit, or no saved payment at all. Check your bank app for per-merchant limits."
+  },
+  "action_log": {
+    "how": "Most agents keep a history of what they did. Once a week, skim it for anything you didn't expect."
+  },
+  "undo_ready": {
+    "how": "Before it touches files, code or data: version history on, a backup, or a copy to work on. Agents have deleted real databases."
   }
 }
