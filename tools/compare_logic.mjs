@@ -4,10 +4,10 @@
 import fs from 'fs'; import vm from 'vm'; import {execFileSync} from 'child_process';
 const content=JSON.parse(fs.readFileSync('content.json','utf8'));
 const html=fs.readFileSync('index.html','utf8');
-const el=()=>({innerHTML:'',textContent:''});
-const ctx=vm.createContext({document:{getElementById:el,querySelector:()=>null,addEventListener(){}},localStorage:{getItem:()=>null,setItem(){}},
+const el=()=>({innerHTML:'',textContent:'',setAttribute(){}});
+const ctx=vm.createContext({document:{documentElement:{dataset:{}},getElementById:el,querySelector:()=>null,addEventListener(){}},localStorage:{getItem:()=>null,setItem(){}},
   location:{hash:''},history:{},window:{scrollTo(){}},fetch:()=>({then:()=>({then:g=>{g(content);return{catch(){}}}})})});
-vm.runInContext(html.slice(html.indexOf('<script>')+8,html.indexOf('</script>')),ctx);
+vm.runInContext(html.slice(html.lastIndexOf('<script>')+8,html.lastIndexOf('</script>')),ctx);
 const js=code=>vm.runInContext(code,ctx);
 let seed=11;const rnd=()=>(seed=(seed*1103515245+12345)%2**31)/2**31;
 const N=+process.argv[2]||3000,cases=[];

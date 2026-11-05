@@ -13,7 +13,8 @@ Goal of this stage: show that the idea works (people learn where they stand, ada
 - **No outside requests.** No CDNs, analytics, embeds or Google Fonts. Answers stay in `localStorage` only. The footer's privacy note depends on this; update it if anything changes.
 - **Lean copy.** Short, plain sentences. No defensive caveats, no filler. The owner explicitly dislikes verbose text.
 - **Comfort first.** One question per screen, number-key shortcuts, instant feedback after each answer.
-- Light and dark themes come from CSS tokens at the top of the style block. Use the tokens, not literal colors.
+- Light and dark themes come from CSS tokens at the top of the style block. Use the tokens, not literal colors. The header's Theme button cycles Auto (system), Light and Dark; the choice is stored under `exposure-scale-theme` (Start over keeps it) and applied by a tiny script in `<head>` before paint.
+- **Type is a fixed scale.** Two families (Bricolage Grotesque for headings, IBM Plex Sans for everything else), weights 400/500/600, six sizes (`--t-xs` 13px to `--t-2xl`), one heading tracking (`--tight`). No monospace, no all-caps. Use the tokens, never a new literal size; numbers that line up use `.num` (tabular figures).
 
 ## How it works
 - `content.json` holds all content: `intro` (the line above the first question), `levels`, `around` (risks at every level), `sources` (shown on the Level tab), `parts` (Your level, Your risks, Around you), `steps`, `questions`, and `linksChecked` (shown in the footer).
