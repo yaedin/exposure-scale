@@ -57,8 +57,15 @@ h1{font:700 1.45rem/1 var(--f-display);letter-spacing:-.02em;margin:0}
 @media (max-width:860px){.check{grid-template-columns:minmax(0,1fr);gap:32px}}
 .stage{max-width:600px;display:grid;gap:18px}
 .prog{display:flex;align-items:center;gap:12px;font-size:.82rem;color:var(--muted)}
-.prog .track{flex:1;height:4px;border-radius:2px;background:var(--chip);overflow:hidden}
-.prog .track i{display:block;height:100%;background:var(--ink);transition:width .4s ease}
+/* one segment per question: answered, skipped, where you are, still open */
+.prog .segs{flex:1;display:flex;gap:2px;height:6px;min-width:0}
+.segs i{flex:1;border-radius:2px;background:var(--chip);transition:background .2s}
+.segs i.ok{background:var(--ink)}
+.segs i.sk{background:var(--line)}
+.segs i.cur{background:var(--todo)}
+.confirm{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:.9rem}
+.confirm>span{padding-left:12px}
+.confirm .yes{color:var(--todo)}
 
 .reply{display:grid;gap:4px;padding:12px 14px;border-radius:12px;background:var(--surface);border:1px solid var(--line);font-size:.92rem}
 .reply .you{color:var(--muted);font-size:.82rem}
@@ -211,7 +218,7 @@ h1{font:700 1.45rem/1 var(--f-display);letter-spacing:-.02em;margin:0}
 .st.todo{background:var(--todo-bg);color:var(--todo);border-color:transparent}
 .st.done{background:var(--done-bg);color:var(--done);border-color:transparent}
 .nores{color:var(--muted)}
-@media (prefers-reduced-motion:reduce){.q{animation:none}.prog .track i,.opt{transition:none}}
+@media (prefers-reduced-motion:reduce){.q{animation:none}.segs i,.opt{transition:none}}
 footer{margin-top:64px;padding-top:18px;border-top:1px solid var(--line);display:grid;gap:6px;font-size:.82rem;color:var(--muted);max-width:68ch}
 footer p{margin:0}
 footer a{color:var(--ink)}
@@ -344,6 +351,10 @@ function replyHTML(lastQ){
   return `<div class="reply">${you}${note?`<span>${esc(note)}</span>`:''}${lastQ.place?'':`<div class="eff">${effPills(lastQ)}</div>`}</div>`;
 }
 
+// Start over asks once before it deletes the saved answers
+const restartHTML=()=>S.confirm?`<span class="confirm"><span>Delete all answers and ticks?</span><button type="button" class="ghost yes" data-restart-yes>Yes, start over</button><button type="button" class="ghost" data-restart-no>Cancel</button></span>`
+  :`<button type="button" class="ghost" data-restart>Start over</button>`;
+
 function vCheck(st){
   const V=visibleQuestions(),q=current(),answered=V.filter(x=>x.id in S.a).length;
   const lastQ=S.last&&V.find(x=>x.id===S.last);
@@ -351,14 +362,16 @@ function vCheck(st){
   if(q){
     const opts=optionsOf(q);
     if(q.multi&&pick.__for!==q.id){pick=Array.isArray(S.a[q.id])?[...S.a[q.id]]:[];pick.__for=q.id}
-    const prevIdx=V.indexOf(q)-1;
+    const prevIdx=V.indexOf(q)-1,front=V.find(x=>!(x.id in S.a)&&x!==q);
+    // going back to an answered question: offer the way back to where they left off
+    const resume=q.id in S.a?`<button type="button" class="ghost" data-resume>${front?`Back to question ${V.indexOf(front)+1}`:'Back to the result'}</button>`:'';
     stage=`<div class="q" id="q-${q.id}">
       <h2>${esc(q.text)}</h2>${q.hint?`<p class="hint">${esc(q.hint)}</p>`:''}
       <div class="opts">${opts.map((o,i)=>{const on=q.multi?pick.includes(o.value):S.a[q.id]===o.value;
         return `<button type="button" class="opt" data-pick="${o.value}" aria-pressed="${on}"><span class="k">${i+1}</span><span class="l">${esc(o.label)}${o.detail?`<span class="s">${esc(o.detail)}</span>`:''}</span>${q.multi?'<span class="box"></span>':''}</button>`}).join('')}</div>
       <div class="qfoot">${q.multi?`<button type="button" class="btn" data-next ${pick.length?'':'disabled'}>Continue</button>`:''}
         ${prevIdx>=0?`<button type="button" class="ghost" data-back="${V[prevIdx].id}">Back</button>`:''}
-        <button type="button" class="ghost" data-skip>Skip</button>
+        <button type="button" class="ghost" data-skip>Skip</button>${resume}${answered?restartHTML():''}
         <span class="keys mono">${q.multi?'1–'+opts.length+' toggle · Enter':'press 1–'+opts.length}</span></div></div>`;
   }else{
     const todo=STEPS.filter(s=>st[s.id]==='todo'),quick=todo.filter(s=>lane(s)==='minutes');
@@ -366,12 +379,13 @@ function vCheck(st){
     stage=`<div class="q fin"><h2>${n?`Level ${n} · ${esc(LEVELS[n-1].name)}.`:'That’s the picture.'}</h2>
       ${n&&guessNote(placement())?`<p>${esc(guessNote(placement()))}</p>`:''}<p>${todo.length} steps in your plan, about ${fmt(todo.reduce((t,s)=>t+s.minutes,0))} in total. ${quick.length} of them take minutes.</p>
       ${todo.some(s=>s.agentHelp)?`<p>Steps marked <span class="ag">Agent helps</span> go faster with the <a href="${SKILL_URL}" target="_blank" rel="noopener">Exposure Scale skill</a> for Claude Code, Codex or Gemini CLI.</p>`:''}
-      <div class="qfoot">${n?`<button type="button" class="btn" data-tab="level">See your level</button><button type="button" class="ghost" data-tab="plan">Open your plan</button>`:`<button type="button" class="btn" data-tab="plan">Open your plan</button>`}<button type="button" class="ghost" data-restart>Start over</button></div></div>`;
+      <div class="qfoot">${n?`<button type="button" class="btn" data-tab="level">See your level</button><button type="button" class="ghost" data-tab="plan">Open your plan</button>`:`<button type="button" class="btn" data-tab="plan">Open your plan</button>`}${restartHTML()}</div></div>`;
   }
   const part=q&&PARTS.find(p=>p.id===q.part);
   const answers=V.filter(x=>x.id in S.a).map(x=>`<button type="button" data-edit="${x.id}"><span>${esc(x.label)}</span><span class="mono" style="font-size:.74rem;color:var(--muted)">edit</span><span class="a">${esc(ansText(x,S.a[x.id]))}</span></button>`).join('');
   return `<div class="check"><div class="stage">
-      <div class="prog">${part?`<span class="label">${esc(part.name)}</span>`:''}<div class="track"><i style="width:${V.length?answered/V.length*100:0}%"></i></div><span class="mono">${answered}/${V.length}</span></div>
+      <div class="prog">${part?`<span class="label">${esc(part.name)}</span>`:''}<div class="segs" role="img" aria-label="${answered} of ${V.length} answered">${V.map(x=>`<i class="${x===q?'cur':!(x.id in S.a)?'':S.a[x.id]==='skip'?'sk':'ok'}" title="${esc(x.label)}"></i>`).join('')}</div>
+        <span class="mono">${q?`${V.indexOf(q)+1}/${V.length}`:`${answered}/${V.length}`}${q&&q.id in S.a?` · ${answered} answered`:''}</span></div>
       ${answered?'':`<p class="lede">${esc(INTRO)}</p>`}${replyHTML(lastQ)}${stage}</div>
     <aside class="side">${levelBox()}${tallyHTML(st)}${answers?`<div><div class="label" style="margin:0 0 6px 8px">Your answers</div><div class="answers">${answers}</div></div>`:''}</aside></div>`;
 }
@@ -449,13 +463,14 @@ function vAll(st){
 }
 
 /* ===== actions ===== */
-function answer(q,v){S.a[q.id]=v;S.last=q.id;S.cur=null;pick=[];
+function answer(q,v){S.a[q.id]=v;S.last=q.id;S.cur=null;S.confirm=false;pick=[];
   // drop answers to questions whose options came from this one, if that choice is gone
   QUESTIONS.filter(x=>x.optionsFrom===q.id&&x.id in S.a&&S.a[x.id]!=='skip'&&!optionsOf(x).some(o=>o.value===S.a[x.id])).forEach(x=>delete S.a[x.id]);
   save();render();focusStage()}
 function focusStage(){const b=document.querySelector('.q .opt, .q .btn');if(b)b.focus({preventScroll:true})}
 document.addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b)return;const d=b.dataset;
+  if(d.restart===undefined)S.confirm=false;
   if(d.tab){S.tab=d.tab;try{history.replaceState(null,'','#'+d.tab)}catch(_){}render();window.scrollTo(0,0);return}
   const q=current();
   if(d.pick!==undefined&&q){
@@ -466,7 +481,10 @@ document.addEventListener('click',e=>{
   if(d.next!==undefined&&q&&pick.length){answer(q,[...pick]);return}
   if(d.skip!==undefined&&q){answer(q,'skip');return}
   if(d.back||d.edit){S.cur=d.back||d.edit;S.tab='check';pick=[];render();focusStage();return}
-  if(d.restart!==undefined){S.a={};S.ov={};S.last=null;S.cur=null;pick=[];save();render();focusStage();return}
+  if(d.restart!==undefined){S.confirm=true;render();const y=document.querySelector('[data-restart-yes]');if(y)y.focus({preventScroll:true});return}
+  if(d.restartYes!==undefined){S.a={};S.ov={};S.last=null;S.cur=null;pick=[];try{localStorage.removeItem(KEY)}catch(_){}render();focusStage();return}
+  if(d.restartNo!==undefined){render();return}
+  if(d.resume!==undefined){S.cur=null;pick=[];render();focusStage();return}
   if(d.open){S.open[d.open]=!S.open[d.open];render();const n=document.querySelector(`[data-open="${d.open}"]`);if(n)n.focus({preventScroll:true});return}
   if(d.done){const st=statusMap();S.ov[d.done]=st[d.done]==='done'?'todo':'done';save();render();const n=document.querySelector(`[data-done="${d.done}"]`);if(n)n.focus({preventScroll:true});return}
   if(d.undo){S.ov[d.undo]='todo';save();render();return}
@@ -481,7 +499,7 @@ document.addEventListener('keydown',e=>{
   const n=parseInt(e.key,10),opts=optionsOf(q);
   if(n>=1&&n<=opts.length){e.preventDefault();document.querySelector(`[data-pick="${opts[n-1].value}"]`).click()}
   // Enter continues even when an option has focus (number keys move focus there); Space still toggles it
-  else if(e.key==='Enter'&&q.multi&&pick.length&&!e.target.closest('[data-back],[data-skip]')){e.preventDefault();answer(q,[...pick])}
+  else if(e.key==='Enter'&&q.multi&&pick.length&&!e.target.closest('.qfoot button')){e.preventDefault();answer(q,[...pick])}
 });
 fetch('content.json').then(r=>r.json()).then(c=>{
   ({intro:INTRO,around:AROUND,levels:LEVELS,sources:SOURCES,parts:PARTS,steps:STEPS,questions:QUESTIONS}=c);
