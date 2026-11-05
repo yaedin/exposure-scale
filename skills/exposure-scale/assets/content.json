@@ -1,6 +1,6 @@
 {
   "linksChecked": "2026-11-04",
-  "intro": "Five levels, from asking AI a question to letting it run your work. A few questions show where you are, how to move up and what each level exposes you to.",
+  "intro": {"title": "How far have you handed your work to AI, and what does that expose you to?", "line": "You get your level on a five-step scale, the next step up and the risks to fix. About four minutes. Your answers stay in this browser."},
 
   "around": {"name": "Around you", "line": "Whatever your level", "risk": "Other people’s AI can copy your voice and face, learn from what you post and decide things about you."},
   "levels": [
@@ -166,7 +166,7 @@
   ],
 
   "questions": [
-    {"id": "self_level", "part": "level", "label": "Your guess", "text": "Where would you put yourself?", "hint": "Pick the closest. The next two questions check it.", "place": "self", "options": [
+    {"id": "self_level", "part": "level", "label": "Your guess", "text": "Where would you put yourself?", "hint": "First, your guess. Pick the closest; the next two questions check it.", "place": "self", "options": [
       {"value": "1", "label": "Ask", "detail": "I ask AI a question now and then, or not yet.", "level": 1},
       {"value": "2", "label": "Work with", "detail": "I work through tasks with it, back and forth.", "level": 2},
       {"value": "3", "label": "Delegate", "detail": "I hand over whole pieces of work and use the result.", "level": 3},
