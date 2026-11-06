@@ -121,6 +121,12 @@ h1{font:600 var(--t-lg)/1 var(--f-display);letter-spacing:var(--tight);margin:0}
 .preview li{display:grid;gap:8px;align-content:start;padding-top:10px;border-top:6px solid color-mix(in srgb,var(--ink) calc(var(--k)*18%),var(--chip));font-size:var(--t-sm);font-weight:500;line-height:1.25}
 .preview .pn{color:var(--muted);font-size:var(--t-xs)}
 .lede{margin:0;font-size:var(--t-md);color:var(--muted);max-width:52ch;text-wrap:pretty}
+.useai{display:grid;gap:10px;padding-top:20px;border-top:1px solid var(--line)}
+.useai .hint{margin:0;max-width:52ch}
+.chats{display:flex;flex-wrap:wrap;gap:8px}
+.chatbtn{height:var(--h-ctl);display:inline-flex;align-items:center;padding:0 14px;border-radius:var(--r-md);border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:var(--t-sm);font-weight:500;text-decoration:none}
+.chatbtn:hover{border-color:var(--muted)}
+.useai .copied:empty{display:none}
 
 .side{display:grid;gap:22px;position:sticky;top:calc(env(safe-area-inset-top,0px) + 20px)}
 @media (max-width:860px){.side{position:static}}
@@ -257,7 +263,7 @@ footer a{color:var(--ink)}
   </header>
   <div id="view"></div>
   <footer>
-    <p><b>Privacy.</b> Your answers stay in this browser’s local storage. No accounts, cookies, analytics or tracking. The site is hosted on GitHub Pages, which may log your IP address (<a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement" target="_blank" rel="noopener">GitHub’s privacy statement</a>). Fonts are served from this site.</p>
+    <p><b>Privacy.</b> Your answers stay in this browser’s local storage. No accounts, cookies, analytics or tracking. The site is hosted on GitHub Pages, which may log your IP address (<a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement" target="_blank" rel="noopener">GitHub’s privacy statement</a>). Fonts are served from this site. If you run the check in an AI app, that app’s privacy terms apply.</p>
     <p><b>Prototype.</b> General guidance, not professional advice. <span id="checked"></span> <a href="https://github.com/yaedin/exposure-scale" target="_blank" rel="noopener">Source and feedback</a>.</p>
   </footer>
 </div>
@@ -341,6 +347,53 @@ function guessNote(p){const n=levelNo(p),t=[];
   if(p.tried>n)t.push(`You’ve tried ${p.tried}.`);
   return t.join(' ')}
 
+/* ===== chat prompt: the check in the person's own AI app, built from content.json ===== */
+// The model reads memory and past chats as evidence, asks only the guess upfront, shows the result,
+// then asks what it couldn't tell. tools/check_prompt.mjs checks coverage and size.
+const condText=c=>!c?'':'minLevel' in c?`only if reach ≥ ${c.minLevel}`
+  :'minCount' in c?`only if ${c.question} has an answer other than None`
+  :'equals' in c?`only if ${c.question} = ${c.equals}`:`only if ${c.question} ≠ ${c.notEquals}`;
+const effText=x=>[...(x.add||[]).map(id=>'+'+id),...(x.done||[]).map(id=>'✓'+id)].join(' ');
+function buildPrompt(){
+  const L=LEVELS.map(l=>`${l.n} ${l.name}: ${l.line}${l.up?` To get here: ${l.up}`:''} Risk: ${l.risk} Guardrails: ${l.guards.join(', ')}.${l.climb.length?` Climb: ${l.climb.join(', ')}.`:''}`).join('\n');
+  const Q=QUESTIONS.filter(q=>q.place!=='self').map(q=>{
+    const role=q.place==='tried'?' [tried: the highest level picked]':q.place==='habit'?' [habit: the level picked]':'';
+    const opts=(q.optionsFrom?[`the levels picked in ${q.optionsFrom}`]:[]).concat((q.options||[]).map(o=>
+      `${o.label}${o.level!=null?` (${o.level})`:''}${o.exclusive?' (alone)':''}${effText(o)?' → '+effText(o):''}`));
+    const eff=(q.effects||[]).map(e=>`${e.if?condText(e.if).replace('only if','if'):'always'} → ${effText(e)}`);
+    return `${q.id}: ${q.text}${role}${q.multi?' Pick all that apply.':''}${q.showIf?` (${condText(q.showIf)})`:''}\n  ${opts.join(' / ')}${eff.length?`\n  Also: ${eff.join('; ')}`:''}`}).join('\n');
+  const T=STEPS.map(s=>{const ln=(s.links||[]).map(l=>`${l.url}${l.showIf?` (${condText(l.showIf).replace('only if ','')})`:''}`);
+    return `${s.id}: ${s.title} · ${s.minutes} min · impact ${s.impact}${s.withOthers?' · with others':''}${ln.length?' · '+ln.join(' '):''}`}).join('\n');
+  return `Run the Exposure Scale check with me (https://yaedin.github.io/exposure-scale/). It places me on a five-level scale of how far I hand work to AI, then builds a plan for the risks that come with it.
+
+How to run it:
+1. Ask me only this first: "Where would you put yourself, 1 to 5?" List the five levels with their one-line description. Wait for my answer.
+2. Then answer the questions below yourself, from what you know about me: memory, past chats, this account. Give each answer with its evidence (what I did, roughly when). No evidence, no answer: leave it open. If you can't see memory or past chats, say so in one line.
+3. Show the result, short:
+- My level: the habit level (at least 1), with two or three lines of evidence. Compare it with my guess.
+- My reach: the higher of tried and habit. Guardrails of every level up to the reach apply, plus the climb steps of the next level.
+- My plan: those steps plus the ones the answers add (+id), minus the ones already in place (✓id). Group them: Minutes (10 min or less, on my own), An evening (longer, on my own), With others. Within a group, higher impact first. For each: title, time, one line on why it applies to me, its link. Show at most eight and say how many more.
+- The next level: what it looks like and how to get there.
+4. End with what you couldn't tell: two to four numbered questions with numbered options, so I can reply in a few characters. When I answer, update the result.
+
+Rules: use only the levels, questions and steps below; don't invent steps or links. Short, plain sentences. Never ask for passwords, codes or account numbers, and don't change settings for me.
+
+LEVELS
+${L}
+Around me, at every level: ${AROUND.risk}
+
+QUESTIONS (level in brackets; → +id adds a step, ✓id means it's in place)
+${Q}
+
+STEPS (id: title · time · impact 1–3 · link)
+${T}`;
+}
+// ChatGPT reads a prefill from the part after #, which never reaches a server; for the others the prompt is pasted
+const CHATS=[['chatgpt','ChatGPT',p=>'https://chatgpt.com/#?q='+encodeURIComponent(p)],['claude','Claude',()=>'https://claude.ai/new'],['gemini','Gemini',()=>'https://gemini.google.com/app']];
+async function copyText(t){try{await navigator.clipboard.writeText(t);return true}catch(_){
+  const a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');a.style.position='fixed';a.style.opacity='0';document.body.appendChild(a);a.select();
+  let ok=false;try{ok=document.execCommand('copy')}catch(_){}a.remove();return ok}}
+
 /* ===== render ===== */
 const $=id=>document.getElementById(id);
 // Theme: Auto follows the system; Light or Dark is saved under its own key, so Start over keeps it
@@ -407,8 +460,16 @@ const onStart=()=>!S.started&&!Object.keys(S.a).length&&!Object.keys(S.ov).lengt
 function vStart(){
   return `<div class="startscr"><div class="${stageClass('start')} start"><h2>${esc(INTRO.title)}</h2><p class="lede">${esc(INTRO.line)}</p>
     <ol class="preview" aria-label="The five levels">${LEVELS.map(l=>`<li style="--k:${l.n}"><span class="pn num">${l.n}</span><span>${esc(l.name)}</span></li>`).join('')}</ol>
-    <div class="qfoot"><button type="button" class="btn" data-start>Start</button><span class="keys">press Enter</span></div></div></div>`;
+    <div class="qfoot"><button type="button" class="btn" data-start>Start</button><span class="keys">press Enter</span></div>
+    ${INTRO.chat?useAiHTML():''}</div></div>`;
 }
+// "Use your AI": each link opens the app (ChatGPT also gets the prompt prefilled) and copies the prompt, so pasting always works
+function useAiHTML(){const p=buildPrompt();
+  return `<div class="useai"><p class="hint">${esc(INTRO.chat)}</p><div class="chats">
+    ${CHATS.map(([k,name,url])=>`<a class="chatbtn" data-chat="${k}" href="${esc(url(p))}" target="_blank" rel="noopener">${name}</a>`).join('')}
+    <button type="button" class="chatbtn" data-copy-prompt>Copy prompt</button></div>
+    <p class="hint copied" id="copied" aria-live="polite"></p></div>`}
+function promptCopied(ok){const n=$('copied');if(n)n.textContent=ok?INTRO.copied:'Couldn’t copy. Use Copy prompt, then paste it.'}
 
 function vCheck(st){
   if(onStart())return vStart();
@@ -526,7 +587,10 @@ function answer(q,v){S.a[q.id]=v;S.last=q.id;S.cur=null;S.confirm=false;pick=[];
 const ADVANCE_MS=180;let advancing=false;
 function focusStage(){const b=document.querySelector('.q .opt, .q .btn');if(b)b.focus({preventScroll:true})}
 document.addEventListener('click',e=>{
+  // a chat link copies the prompt and opens the app; the link itself does the opening
+  if(e.target.closest('a[data-chat]')){copyText(buildPrompt()).then(promptCopied);return}
   const b=e.target.closest('button');if(!b)return;const d=b.dataset;
+  if(d.copyPrompt!==undefined){copyText(buildPrompt()).then(promptCopied);return}
   if(d.restart===undefined)S.confirm=false;
   if(b.id==='theme'){setTheme(THEMES[(THEMES.indexOf(theme())+1)%THEMES.length]);return}
   if(d.tab){S.tab=d.tab;try{history.replaceState(null,'','#'+d.tab)}catch(_){}render();window.scrollTo(0,0);return}
@@ -557,7 +621,7 @@ document.addEventListener('click',e=>{
 document.addEventListener('input',e=>{if(e.target.id==='search'){S.f.q=e.target.value;const pos=e.target.selectionStart;render();const s=$('search');s.focus();try{s.setSelectionRange(pos,pos)}catch(_){}}});
 document.addEventListener('keydown',e=>{
   if(S.tab!=='check'||e.target.tagName==='INPUT'||e.metaKey||e.ctrlKey||e.altKey)return;
-  if(onStart()){if(e.key==='Enter'&&!e.target.closest('button')){e.preventDefault();S.started=true;render();focusStage()}return}
+  if(onStart()){if(e.key==='Enter'&&!e.target.closest('button,a')){e.preventDefault();S.started=true;render();focusStage()}return}
   const q=current();if(!q)return;
   const n=parseInt(e.key,10),opts=optionsOf(q);
   if(n>=1&&n<=opts.length){e.preventDefault();document.querySelector(`[data-pick="${opts[n-1].value}"]`).click()}
