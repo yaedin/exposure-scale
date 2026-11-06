@@ -121,8 +121,11 @@ h1{font:600 var(--t-lg)/1 var(--f-display);letter-spacing:var(--tight);margin:0}
 .preview li{display:grid;gap:8px;align-content:start;padding-top:10px;border-top:6px solid color-mix(in srgb,var(--ink) calc(var(--k)*18%),var(--chip));font-size:var(--t-sm);font-weight:500;line-height:1.25}
 .preview .pn{color:var(--muted);font-size:var(--t-xs)}
 .lede{margin:0;font-size:var(--t-md);color:var(--muted);max-width:52ch;text-wrap:pretty}
-.useai{display:grid;gap:10px;padding-top:20px;border-top:1px solid var(--line)}
+.useai{display:grid;gap:12px;padding-top:20px;border-top:1px solid var(--line)}
 .useai .hint{margin:0;max-width:52ch}
+.ailines{margin:0;padding-left:20px;display:grid;gap:4px;max-width:52ch}
+.useai .textbtn{padding:0}
+.promptbox{max-height:320px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;padding:12px 14px;border-radius:var(--r-lg);background:var(--surface);border:1px solid var(--line);font-size:var(--t-xs);line-height:1.5}
 .chats{display:flex;flex-wrap:wrap;gap:8px}
 .chatbtn{height:var(--h-ctl);display:inline-flex;align-items:center;padding:0 14px;border-radius:var(--r-md);border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:var(--t-sm);font-weight:500;text-decoration:none}
 .chatbtn:hover{border-color:var(--muted)}
@@ -354,6 +357,8 @@ const condText=c=>!c?'':'minLevel' in c?`only if reach ≥ ${c.minLevel}`
   :'minCount' in c?`only if ${c.question} has an answer other than None`
   :'equals' in c?`only if ${c.question} = ${c.equals}`:`only if ${c.question} ≠ ${c.notEquals}`;
 const effText=x=>[...(x.add||[]).map(id=>'+'+id),...(x.done||[]).map(id=>'✓'+id)].join(' ');
+// The prompt has two parts: a short block a person can read in seconds, then the reference the model scores with
+const PROMPT_REF='—— Reference for the AI: scoring, levels, questions, steps ——';
 function buildPrompt(){
   const L=LEVELS.map(l=>`${l.n} ${l.name}: ${l.line}${l.up?` To get here: ${l.up}`:''} Risk: ${l.risk} Guardrails: ${l.guards.join(', ')}.${l.climb.length?` Climb: ${l.climb.join(', ')}.`:''}`).join('\n');
   const Q=QUESTIONS.filter(q=>q.place!=='self').map(q=>{
@@ -364,19 +369,17 @@ function buildPrompt(){
     return `${q.id}: ${q.text}${role}${q.multi?' Pick all that apply.':''}${q.showIf?` (${condText(q.showIf)})`:''}\n  ${opts.join(' / ')}${eff.length?`\n  Also: ${eff.join('; ')}`:''}`}).join('\n');
   const T=STEPS.map(s=>{const ln=(s.links||[]).map(l=>`${l.url}${l.showIf?` (${condText(l.showIf).replace('only if ','')})`:''}`);
     return `${s.id}: ${s.title} · ${s.minutes} min · impact ${s.impact}${s.withOthers?' · with others':''}${ln.length?' · '+ln.join(' '):''}`}).join('\n');
-  return `Run the Exposure Scale check with me (https://yaedin.github.io/exposure-scale/). It places me on a five-level scale of how far I hand work to AI, then builds a plan for the risks that come with it.
+  return `Run the Exposure Scale check with me (https://yaedin.github.io/exposure-scale/). It places me on a five-level scale of how far I hand work to AI and shows the risks that come with it.
 
-How to run it:
-1. Ask me only this first: "Where would you put yourself, 1 to 5?" List the five levels with their one-line description. Wait for my answer.
-2. Then answer the questions below yourself, from what you know about me: memory, past chats, this account. Give each answer with its evidence (what I did, roughly when). No evidence, no answer: leave it open. If you can't see memory or past chats, say so in one line.
-3. Show the result, short:
-- My level: the habit level (at least 1), with two or three lines of evidence. Compare it with my guess.
-- My reach: the higher of tried and habit. Guardrails of every level up to the reach apply, plus the climb steps of the next level.
-- My plan: those steps plus the ones the answers add (+id), minus the ones already in place (✓id). Group them: Minutes (10 min or less, on my own), An evening (longer, on my own), With others. Within a group, higher impact first. For each: title, time, one line on why it applies to me, its link. Show at most eight and say how many more.
-- The next level: what it looks like and how to get there.
-4. End with what you couldn't tell: two to four numbered questions with numbered options, so I can reply in a few characters. When I answer, update the result.
+1. First ask where I'd put myself, 1 to 5, with the levels from the reference below. Wait for my answer.
+2. Then work out the rest yourself from what you know about me: memory, past chats, this account. Back each answer with what I did and roughly when. No evidence, no answer. If you can't see memory or past chats, say so.
+3. Show my level with the evidence and compare it with my guess. Then the risks that apply to me and my first steps, with links. Keep it short.
+4. End with two to four numbered questions for what you couldn't tell, and update the result when I answer.
 
-Rules: use only the levels, questions and steps below; don't invent steps or links. Short, plain sentences. Never ask for passwords, codes or account numbers, and don't change settings for me.
+Use only the reference below; don't invent steps or links. Never ask for passwords, codes or account numbers, and don't change any settings for me.
+
+${PROMPT_REF}
+How to score: my level is the habit level (at least 1); my reach is the higher of tried and habit. The plan is the guardrails of every level up to my reach and the climb steps of the next level, plus the steps my answers add (+id), minus the ones already in place (✓id). Group the plan: Minutes (10 min or less, on my own), An evening (longer, on my own), With others; higher impact first. Show at most eight steps, each with title, time, one line on why it applies and its link, and say how many more. Also say what the next level looks like and how to get there.
 
 LEVELS
 ${L}
@@ -460,13 +463,16 @@ const onStart=()=>!S.started&&!Object.keys(S.a).length&&!Object.keys(S.ov).lengt
 function vStart(){
   return `<div class="startscr"><div class="${stageClass('start')} start"><h2>${esc(INTRO.title)}</h2><p class="lede">${esc(INTRO.line)}</p>
     <ol class="preview" aria-label="The five levels">${LEVELS.map(l=>`<li style="--k:${l.n}"><span class="pn num">${l.n}</span><span>${esc(l.name)}</span></li>`).join('')}</ol>
-    <div class="qfoot"><button type="button" class="btn" data-start>Start</button><span class="keys">press Enter</span></div>
-    ${INTRO.chat?useAiHTML():''}</div></div>`;
+    <div class="qfoot"><button type="button" class="btn" data-start>Start</button>${INTRO.ai?`<button type="button" class="ghost" data-ai aria-expanded="${!!S.ai}" aria-controls="aipanel">${esc(INTRO.ai)}</button>`:''}<span class="keys">press Enter</span></div>
+    ${INTRO.ai&&S.ai?useAiHTML():''}</div></div>`;
 }
-// "Use your AI": each link opens the app (ChatGPT also gets the prompt prefilled) and copies the prompt, so pasting always works
+// "Use your AI" opens a panel: what the prompt does in three lines, the full prompt on request, then the apps.
+// Each app link copies the prompt and opens the app (ChatGPT also gets it prefilled), so pasting always works.
 function useAiHTML(){const p=buildPrompt();
-  return `<div class="useai"><p class="hint">${esc(INTRO.chat)}</p><div class="chats">
-    ${CHATS.map(([k,name,url])=>`<a class="chatbtn" data-chat="${k}" href="${esc(url(p))}" target="_blank" rel="noopener">${name}</a>`).join('')}
+  return `<div class="useai" id="aipanel"><ul class="ailines">${INTRO.aiLines.map(l=>`<li>${esc(l)}</li>`).join('')}</ul>
+    <div><button type="button" class="textbtn" data-show-prompt aria-expanded="${!!S.showPrompt}">${S.showPrompt?'Hide the prompt':'Show the full prompt'}</button></div>
+    ${S.showPrompt?`<div class="promptbox" tabindex="0" aria-label="The full prompt">${esc(p)}</div>`:''}
+    <div class="chats">${CHATS.map(([k,name,url])=>`<a class="chatbtn" data-chat="${k}" href="${esc(url(p))}" target="_blank" rel="noopener">${name}</a>`).join('')}
     <button type="button" class="chatbtn" data-copy-prompt>Copy prompt</button></div>
     <p class="hint copied" id="copied" aria-live="polite"></p></div>`}
 function promptCopied(ok){const n=$('copied');if(n)n.textContent=ok?INTRO.copied:'Couldn’t copy. Use Copy prompt, then paste it.'}
@@ -591,6 +597,8 @@ document.addEventListener('click',e=>{
   if(e.target.closest('a[data-chat]')){copyText(buildPrompt()).then(promptCopied);return}
   const b=e.target.closest('button');if(!b)return;const d=b.dataset;
   if(d.copyPrompt!==undefined){copyText(buildPrompt()).then(promptCopied);return}
+  if(d.ai!==undefined){S.ai=!S.ai;render();const n=document.querySelector(S.ai?'[data-show-prompt]':'[data-ai]');if(n)n.focus({preventScroll:true});return}
+  if(d.showPrompt!==undefined){S.showPrompt=!S.showPrompt;render();const n=document.querySelector('[data-show-prompt]');if(n)n.focus({preventScroll:true});return}
   if(d.restart===undefined)S.confirm=false;
   if(b.id==='theme'){setTheme(THEMES[(THEMES.indexOf(theme())+1)%THEMES.length]);return}
   if(d.tab){S.tab=d.tab;try{history.replaceState(null,'','#'+d.tab)}catch(_){}render();window.scrollTo(0,0);return}
@@ -621,7 +629,7 @@ document.addEventListener('click',e=>{
 document.addEventListener('input',e=>{if(e.target.id==='search'){S.f.q=e.target.value;const pos=e.target.selectionStart;render();const s=$('search');s.focus();try{s.setSelectionRange(pos,pos)}catch(_){}}});
 document.addEventListener('keydown',e=>{
   if(S.tab!=='check'||e.target.tagName==='INPUT'||e.metaKey||e.ctrlKey||e.altKey)return;
-  if(onStart()){if(e.key==='Enter'&&!e.target.closest('button,a')){e.preventDefault();S.started=true;render();focusStage()}return}
+  if(onStart()){if(e.key==='Enter'&&!e.target.closest('button,a,.promptbox')){e.preventDefault();S.started=true;render();focusStage()}return}
   const q=current();if(!q)return;
   const n=parseInt(e.key,10),opts=optionsOf(q);
   if(n>=1&&n<=opts.length){e.preventDefault();document.querySelector(`[data-pick="${opts[n-1].value}"]`).click()}
