@@ -41,7 +41,7 @@ img{max-width:100%}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--ink);font:var(--t-md)/1.5 var(--f-body);-webkit-font-smoothing:antialiased}
 button,input{font:inherit;color:inherit}
-button{background:none;border:0;cursor:pointer;text-align:left}
+button{background:none;border:0;cursor:pointer;text-align:left;-webkit-tap-highlight-color:transparent}
 button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-radius:var(--r-md)}
 a{color:inherit}
 b,strong{font-weight:600}
@@ -86,6 +86,7 @@ h1{font:600 var(--t-lg)/1 var(--f-display);letter-spacing:var(--tight);margin:0}
 
 .q{display:grid;gap:16px;animation:in .28s ease both}
 @keyframes in{from{opacity:.001;transform:translateY(8px)}to{opacity:1;transform:none}}
+.q.still{animation:none}
 .q h2{font:600 var(--t-xl)/1.15 var(--f-display);letter-spacing:var(--tight);margin:0;text-wrap:balance}
 .q .hint{color:var(--muted);margin:-8px 0 0;font-size:var(--t-sm)}
 .opts{display:grid;gap:8px}
@@ -104,7 +105,9 @@ h1{font:600 var(--t-lg)/1 var(--f-display);letter-spacing:var(--tight);margin:0}
 .ghost{height:var(--h-ctl);display:inline-flex;align-items:center;justify-content:center;padding:0 12px;border-radius:var(--r-md);color:var(--muted);font-size:var(--t-sm)}
 .ghost:hover{color:var(--ink);background:var(--chip)}
 .keys{margin-left:auto;font-size:var(--t-xs);color:var(--muted)}
-@media (max-width:620px){.keys{display:none}}
+@media (max-width:620px){.keys{display:none}
+  /* multi-choice: keep Continue in reach while scrolling the options */
+  .q.multi .qfoot{position:sticky;bottom:0;z-index:1;background:var(--bg);border-top:1px solid var(--line);margin:0 -16px;padding:12px 16px max(12px,env(safe-area-inset-bottom))}}
 
 .fin h2{font:600 var(--t-xl)/1.15 var(--f-display);margin:0;letter-spacing:var(--tight)}
 .fin p{margin:0;color:var(--muted)}
@@ -361,6 +364,7 @@ function render(){
   const st=statusMap(),inPlan=Object.keys(st),n=placed()?levelNo(placement()):'';
   const T=[['check','Check',''],['level','Level',n??''],['plan','Plan',inPlan.filter(i=>st[i]==='todo').length||''],['all','All steps',STEPS.length]];
   $('tabs').innerHTML=T.map(([k,l,c])=>`<button type="button" role="tab" data-tab="${k}" aria-selected="${S.tab===k}">${l}${c!==''?`<span class="c">${c}</span>`:''}</button>`).join('');
+  if(S.tab!=='check')shownStage=null;
   $('view').innerHTML=S.tab==='check'?vCheck(st):S.tab==='level'?vLevel(st):S.tab==='plan'?vPlan(st):vAll(st);
 }
 
@@ -393,10 +397,14 @@ function replyHTML(lastQ){
 const restartHTML=()=>S.confirm?`<span class="confirm"><span>Delete all answers and ticks?</span><button type="button" class="ghost yes" data-restart-yes>Yes, start over</button><button type="button" class="ghost" data-restart-no>Cancel</button></span>`
   :`<button type="button" class="ghost" data-restart>Start over</button>`;
 
+// The card animates in only when a new screen appears, not when the same one redraws after a tap
+let shownStage=null;
+const stageClass=k=>{const still=k===shownStage;shownStage=k;return still?'q still':'q'};
+
 // Before the first answer, a start screen says what the check is for
 const onStart=()=>!S.started&&!Object.keys(S.a).length&&!Object.keys(S.ov).length;
 function vStart(){
-  return `<div class="startscr"><div class="q start"><h2>${esc(INTRO.title)}</h2><p class="lede">${esc(INTRO.line)}</p>
+  return `<div class="startscr"><div class="${stageClass('start')} start"><h2>${esc(INTRO.title)}</h2><p class="lede">${esc(INTRO.line)}</p>
     <ol class="preview" aria-label="The five levels">${LEVELS.map(l=>`<li style="--k:${l.n}"><span class="pn num">${l.n}</span><span>${esc(l.name)}</span></li>`).join('')}</ol>
     <div class="qfoot"><button type="button" class="btn" data-start>Start</button><span class="keys">press Enter</span></div></div></div>`;
 }
@@ -412,18 +420,18 @@ function vCheck(st){
     const prevIdx=V.indexOf(q)-1,front=V.find(x=>!(x.id in S.a)&&x!==q);
     // going back to an answered question: offer the way back to where they left off
     const resume=q.id in S.a?`<button type="button" class="ghost" data-resume>${front?`Back to question ${V.indexOf(front)+1}`:'Back to the result'}</button>`:'';
-    stage=`<div class="q" id="q-${q.id}">
+    stage=`<div class="${stageClass('q-'+q.id)}${q.multi?' multi':''}" id="q-${q.id}">
       <h2>${esc(q.text)}</h2>${q.hint?`<p class="hint">${esc(q.hint)}</p>`:''}
       <div class="opts">${opts.map((o,i)=>{const on=q.multi?pick.includes(o.value):S.a[q.id]===o.value;
         return `<button type="button" class="opt" data-pick="${o.value}" aria-pressed="${on}"><span class="k">${i+1}</span><span class="l">${esc(o.label)}${o.detail?`<span class="s">${esc(o.detail)}</span>`:''}</span>${q.multi?'<span class="box"></span>':''}</button>`}).join('')}</div>
-      <div class="qfoot">${q.multi?`<button type="button" class="btn" data-next ${pick.length?'':'disabled'}>Continue</button>`:''}
+      <div class="qfoot">${q.multi?`<button type="button" class="btn" data-next ${pick.length?'':'disabled'}><span>Continue${pick.length?` · <span class="num">${pick.length}</span>`:''}</span></button>`:''}
         ${prevIdx>=0?`<button type="button" class="ghost" data-back="${V[prevIdx].id}">Back</button>`:''}
         <button type="button" class="ghost" data-skip>Skip</button>${resume}${answered?restartHTML():''}
         <span class="keys">${q.multi?'1–'+opts.length+' toggle · Enter':'press 1–'+opts.length}</span></div></div>`;
   }else{
     const todo=STEPS.filter(s=>st[s.id]==='todo'),quick=todo.filter(s=>lane(s)==='minutes');
     const n=placed()?levelNo(placement()):null;
-    stage=`<div class="q fin"><h2>${n?`Level ${n} · ${esc(LEVELS[n-1].name)}.`:'That’s the picture.'}</h2>
+    stage=`<div class="${stageClass('fin')} fin"><h2>${n?`Level ${n} · ${esc(LEVELS[n-1].name)}.`:'That’s the picture.'}</h2>
       ${n&&guessNote(placement())?`<p>${esc(guessNote(placement()))}</p>`:''}<p>${todo.length} steps in your plan, about ${fmt(todo.reduce((t,s)=>t+s.minutes,0))} in total. ${quick.length} of them take minutes.</p>
       ${todo.some(s=>s.agentHelp)?`<p>Steps marked <span class="ag">Agent helps</span> go faster with the <a href="${SKILL_URL}" target="_blank" rel="noopener">Exposure Scale skill</a> for Claude Code, Codex or Gemini CLI.</p>`:''}
       <div class="qfoot">${n?`<button type="button" class="btn" data-tab="level">See your level</button><button type="button" class="ghost" data-tab="plan">Open your plan</button>`:`<button type="button" class="btn" data-tab="plan">Open your plan</button>`}${restartHTML()}</div></div>`;
@@ -514,6 +522,7 @@ function answer(q,v){S.a[q.id]=v;S.last=q.id;S.cur=null;S.confirm=false;pick=[];
   // drop answers to questions whose options came from this one, if that choice is gone
   QUESTIONS.filter(x=>x.optionsFrom===q.id&&x.id in S.a&&S.a[x.id]!=='skip'&&!optionsOf(x).some(o=>o.value===S.a[x.id])).forEach(x=>delete S.a[x.id]);
   save();render();focusStage()}
+const ADVANCE_MS=180;let advancing=false;
 function focusStage(){const b=document.querySelector('.q .opt, .q .btn');if(b)b.focus({preventScroll:true})}
 document.addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b)return;const d=b.dataset;
@@ -521,11 +530,14 @@ document.addEventListener('click',e=>{
   if(b.id==='theme'){setTheme(THEMES[(THEMES.indexOf(theme())+1)%THEMES.length]);return}
   if(d.tab){S.tab=d.tab;try{history.replaceState(null,'','#'+d.tab)}catch(_){}render();window.scrollTo(0,0);return}
   const q=current();
+  if(advancing&&(d.pick!==undefined||d.next!==undefined||d.skip!==undefined||d.back))return;
   if(d.pick!==undefined&&q){
     if(q.multi){const o=optionsOf(q).find(x=>x.value===d.pick);
       if(o.exclusive)pick=pick.includes(d.pick)?[]:[d.pick];else{pick=pick.filter(v=>!optionsOf(q).find(x=>x.value===v).exclusive);pick=pick.includes(d.pick)?pick.filter(v=>v!==d.pick):[...pick,d.pick]}
       pick.__for=q.id;render();const n=document.querySelector(`[data-pick="${d.pick}"]`);if(n)n.focus({preventScroll:true});return}
-    answer(q,d.pick);return}
+    // single choice: show the pick land for a moment, then move on
+    document.querySelectorAll('.q .opt').forEach(n=>n.setAttribute('aria-pressed',n===b));
+    advancing=true;setTimeout(()=>{advancing=false;answer(q,d.pick)},ADVANCE_MS);return}
   if(d.next!==undefined&&q&&pick.length){answer(q,[...pick]);return}
   if(d.skip!==undefined&&q){answer(q,'skip');return}
   if(d.back||d.edit){S.cur=d.back||d.edit;S.tab='check';pick=[];render();focusStage();return}

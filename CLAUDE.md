@@ -12,7 +12,7 @@ Goal of this stage: show that the idea works (people learn where they stand, ada
 - **No build step.** Code and styles live in `index.html`, content in `content.json`, fonts in `fonts/`. The page fetches `content.json`, so preview it through a local server (`python3 -m http.server`), not by opening the file.
 - **No outside requests.** No CDNs, analytics, embeds or Google Fonts. Answers stay in `localStorage` only. The footer's privacy note depends on this; update it if anything changes.
 - **Lean copy.** Short, plain sentences. No defensive caveats, no filler. The owner explicitly dislikes verbose text.
-- **Comfort first.** One question per screen, number-key shortcuts, instant feedback after each answer.
+- **Comfort first.** One question per screen, number-key shortcuts, instant feedback after each answer. Single choice advances after a short pause that shows the pick; multi choice waits for Continue (with a count), which sticks to the bottom on phones. The question card animates in only when a new screen appears, never on a redraw of the same one.
 - **Use the design tokens** (see Design system below). No new literal colors, font sizes, radii or control heights.
 
 ## Design system
