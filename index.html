@@ -198,32 +198,46 @@ h1{font:600 var(--t-lg)/1 var(--f-display);letter-spacing:var(--tight);margin:0}
 .go-lv::after{content:" →"}
 .lvlink{padding:0;justify-self:start}
 .lvlink:hover{color:var(--ink)}
-.ladder{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
-@media (max-width:860px){.ladder{grid-template-columns:minmax(0,1fr);gap:6px}}
-.rung{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:12px;display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:start}
-.rung.cur{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
-.rn{width:var(--h-tag);height:var(--h-tag);border-radius:var(--r-sm);display:grid;place-items:center;background:var(--chip);color:var(--muted);font-weight:500}
-.rung.cur .rn,.rung.below .rn{background:var(--ink);color:var(--bg)}
-.rb{display:grid;gap:4px}
-.rt2{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
-.rt2 b{font:600 var(--t-md)/1.2 var(--f-display)}
-.rl{font-size:var(--t-sm);color:var(--muted);line-height:1.4}
 .tg{font:500 var(--t-xs)/1 var(--f-body);height:var(--h-label);display:inline-flex;align-items:center;padding:0 6px;border-radius:var(--r-sm);background:var(--chip);color:var(--muted);white-space:nowrap}
 .tg.you{background:var(--ink);color:var(--bg)}
-.lvcols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:28px;align-items:start}
-@media (max-width:860px){.lvcols{grid-template-columns:minmax(0,1fr)}}
-.comes{margin:4px 0 0;font-size:var(--t-sm);color:var(--muted)}
-.comes b{color:var(--ink);font-weight:500}
-.risks{display:grid;gap:8px}
-.risk{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:12px;display:grid;gap:6px}
-.risk .rh{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
-.risk .rh b{font:600 var(--t-md)/1.2 var(--f-display)}
-.risk .rh span{font-size:var(--t-xs);color:var(--muted);white-space:nowrap}
-.risk p{margin:0;font-size:var(--t-sm)}
-.risk ul{margin:2px 0 0;padding:0;list-style:none;display:grid;gap:2px;font-size:var(--t-sm);color:var(--muted)}
-.risk li{display:grid;grid-template-columns:1.3em minmax(0,1fr)}
-.risk li::before{content:"○";color:var(--todo)}
-.risk li.ok::before{content:"✓";color:var(--done)}
+.tg.nx{background:var(--todo-bg);color:var(--todo)}
+/* result: the scale as the outline. One level open at a time; the rail links the levels */
+.result{display:grid;gap:20px;max-width:640px}
+.rhead{display:grid;gap:8px}
+.rhead h2{font:600 var(--t-2xl)/1.05 var(--f-display);letter-spacing:var(--tight);margin:0;text-wrap:balance}
+.rhead p{margin:0;color:var(--muted)}
+.climb{list-style:none;margin:0;padding:0;display:grid}
+.climb>li{display:grid;grid-template-columns:var(--h-ctl) minmax(0,1fr);column-gap:12px}
+.rail{display:flex;flex-direction:column;align-items:center}
+.node{width:var(--h-ctl);height:var(--h-ctl);flex:none;box-sizing:border-box;border-radius:var(--r-md);display:grid;place-items:center;font:600 var(--t-lg)/1 var(--f-display);background:var(--chip);color:var(--muted)}
+.rail i{flex:1;width:2px;min-height:12px;background:var(--line)}
+.climb>li:last-child .rail i{background:none}
+.climb .below .node,.climb .you .node{background:var(--ink);color:var(--bg)}
+.climb .you .node{box-shadow:0 0 0 3px var(--bg),0 0 0 5px var(--ink)}
+.climb .below .rail i{background:var(--ink)}
+.climb .next .node,.climb .tried .node{background:var(--surface);color:var(--ink);border:2px dashed var(--ink)}
+.lvc{min-width:0;padding-bottom:14px}
+.lvh{width:100%;min-height:var(--h-ctl);display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:10px;row-gap:2px;align-items:center;padding:6px 0 0}
+.lvh .t{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.lvh b{font:600 var(--t-lg)/1.2 var(--f-display)}
+.lvh .m{font-size:var(--t-xs);color:var(--muted)}
+.lvh.off{grid-template-columns:minmax(0,1fr)}
+.lvh.off b{color:var(--muted)}
+.lvh .k,.lvbody .k{font-size:var(--t-xs);font-weight:500;color:var(--muted)}
+.chev{grid-column:2;grid-row:1/span 3;width:var(--h-icon);height:var(--h-icon);fill:none;stroke:var(--muted);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:transform .15s}
+.lvh[aria-expanded="true"] .chev{transform:rotate(180deg)}
+.lvbody{margin-top:8px;display:grid;gap:8px}
+.lvbody p{margin:0 0 4px;font-size:var(--t-sm);color:var(--ink)}
+.lvbody .k{margin-top:6px}
+.aroundbox{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:4px 14px 12px}
+.aroundbox .card{background:var(--bg)}
+.why{grid-column:2;margin:0;font-size:var(--t-xs);color:var(--muted)}
+.resfoot{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.resfoot>span{display:grid;gap:2px}
+.resfoot b{font:600 var(--t-xl)/1.1 var(--f-display);letter-spacing:var(--tight)}
+.resfoot>span>span{font-size:var(--t-xs);color:var(--muted)}
+.yours summary{cursor:pointer;color:var(--muted);font-size:var(--t-sm)}
+.yours .answers{margin-top:8px}
 .src summary{cursor:pointer;color:var(--muted);font-size:var(--t-sm)}
 .src p{margin:10px 0 6px;font-size:var(--t-sm);color:var(--muted);max-width:68ch}
 .src ul{margin:0;padding-left:18px;font-size:var(--t-sm);display:grid;gap:3px}
@@ -250,7 +264,7 @@ h1{font:600 var(--t-lg)/1 var(--f-display);letter-spacing:var(--tight);margin:0}
 .st.todo{background:var(--todo-bg);color:var(--todo);border-color:transparent}
 .st.done{background:var(--done-bg);color:var(--done);border-color:transparent}
 .nores{color:var(--muted)}
-@media (prefers-reduced-motion:reduce){.q{animation:none}.segs i,.opt{transition:none}}
+@media (prefers-reduced-motion:reduce){.chev{transition:none}.q{animation:none}.segs i,.opt{transition:none}}
 footer{margin-top:64px;padding-top:18px;border-top:1px solid var(--line);display:grid;gap:6px;font-size:var(--t-sm);color:var(--muted);max-width:68ch}
 footer p{margin:0}
 footer a{color:var(--ink)}
@@ -496,13 +510,16 @@ function vCheck(st){
         ${prevIdx>=0?`<button type="button" class="ghost" data-back="${V[prevIdx].id}">Back</button>`:''}
         <button type="button" class="ghost" data-skip>Skip</button>${resume}${answered?restartHTML():''}
         <span class="keys">${q.multi?'1–'+opts.length+' toggle · Enter':'press 1–'+opts.length}</span></div></div>`;
+  }else if(placed()){
+    // the end of the check: the result itself, with the answers folded away
+    const answers=V.filter(x=>x.id in S.a).map(x=>`<button type="button" data-edit="${x.id}"><span>${esc(x.label)}</span><span class="num" style="font-size:var(--t-xs);color:var(--muted)">edit</span><span class="a">${esc(ansText(x,S.a[x.id]))}</span></button>`).join('');
+    return `<div class="${stageClass('fin')} fin">${resultHTML(st)}
+      <details class="yours"><summary>Your answers (${answered})</summary><div class="answers">${answers}</div></details>
+      <div class="qfoot">${restartHTML()}</div></div>`;
   }else{
-    const todo=STEPS.filter(s=>st[s.id]==='todo'),quick=todo.filter(s=>lane(s)==='minutes');
-    const n=placed()?levelNo(placement()):null;
-    stage=`<div class="${stageClass('fin')} fin"><h2>${n?`Level ${n} · ${esc(LEVELS[n-1].name)}.`:'That’s the picture.'}</h2>
-      ${n&&guessNote(placement())?`<p>${esc(guessNote(placement()))}</p>`:''}<p>${todo.length} steps in your plan, about ${fmt(todo.reduce((t,s)=>t+s.minutes,0))} in total. ${quick.length} of them take minutes.</p>
-      ${todo.some(s=>s.agentHelp)?`<p>Steps marked <span class="ag">Agent helps</span> go faster with the <a href="${SKILL_URL}" target="_blank" rel="noopener">Exposure Scale skill</a> for Claude Code, Codex or Gemini CLI.</p>`:''}
-      <div class="qfoot">${n?`<button type="button" class="btn" data-tab="level">See your level</button><button type="button" class="ghost" data-tab="plan">Open your plan</button>`:`<button type="button" class="btn" data-tab="plan">Open your plan</button>`}${restartHTML()}</div></div>`;
+    const todo=STEPS.filter(s=>st[s.id]==='todo');
+    stage=`<div class="${stageClass('fin')} fin"><h2>That’s the picture.</h2><p>${todo.length} steps in your plan, about ${fmt(todo.reduce((t,s)=>t+s.minutes,0))} in total.</p>
+      <div class="qfoot"><button type="button" class="btn" data-tab="plan">Open your plan</button>${restartHTML()}</div></div>`;
   }
   const part=q&&PARTS.find(p=>p.id===q.part);
   const answers=V.filter(x=>x.id in S.a).map(x=>`<button type="button" data-edit="${x.id}"><span>${esc(x.label)}</span><span class="num" style="font-size:var(--t-xs);color:var(--muted)">edit</span><span class="a">${esc(ansText(x,S.a[x.id]))}</span></button>`).join('');
@@ -521,36 +538,71 @@ const toggleAttrs=s=>opens(s)?`type="button" data-open="${s.id}" aria-expanded="
 const moreHTML=s=>S.open[s.id]&&opens(s)?`<div class="more">${linksOf(s).length?`<div class="links">${linksOf(s).map(l=>`<a class="go" href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.label)}</a>`).join('')}</div>`:''}${s.agentHelp?`<p class="ah">${esc(s.agentHelp)} <a href="${SKILL_URL}" target="_blank" rel="noopener">Get the skill</a></p>`:''}</div>`:'';
 const tag=s=>opens(s)?'button':'div';
 
-function card(s,stv){
+function card(s,stv,why){
   return `<div class="card ${stv==='done'?'is-done':''}">
     <button type="button" class="tick" data-done="${s.id}" aria-pressed="${stv==='done'}" aria-label="Mark done"></button>
     <${tag(s)} class="ct" ${toggleAttrs(s)}>${esc(s.title)}</${tag(s)}>
     <div class="meta"><span class="num">${fmt(s.minutes)}</span>${impactDots(s)}${chips(s)}</div>
+    ${why?`<p class="why">From: ${esc(why)}</p>`:''}
     ${moreHTML(s)}
   </div>`;
 }
 
+/* ===== result: the scale as the outline (end of the check and the Level tab) ===== */
+// Which answer put a step in the plan, for the "From:" line; steps that come only from the level get none
+function whyOf(id){const out=[];
+  visibleQuestions().forEach(q=>{const ans=S.a[q.id];if(ans==null||ans==='skip')return;const sel=q.multi?ans:[ans];
+    const hit=optionsOf(q).filter(o=>sel.includes(o.value)&&[...(o.add||[]),...(o.done||[])].includes(id)).map(o=>o.label);
+    if(hit.length)out.push(`${q.label} · ${hit.join(', ')}`);
+    else if((q.effects||[]).some(e=>meets(e.if,S.a)&&(e.add||[]).includes(id)))out.push(`${q.label} · ${ansText(q,ans)}`)});
+  return out.join('; ')}
+const CHEV='<svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
+const byNeed=st=>(a,b)=>(st[a.id]==='done')-(st[b.id]==='done')||b.impact-a.impact||a.minutes-b.minutes;
+let lvShown=null; // the level open on screen, so a tap on it closes it
+// Levels below and at yours, and any you've tried, open to their risk and steps; the next level also to the steps up.
+// Levels beyond show only what they look like. One open at a time; by default the next level (or yours at the top).
+function resultHTML(st,{sources=false}={}){
+  const p=placement(),n=levelNo(p),L=LEVELS[n-1],nx=LEVELS[n];
+  const riskSteps=lv=>STEPS.filter(s=>s.level===lv&&!s.up&&st[s.id]);
+  const count=its=>{const ok=its.filter(s=>st[s.id]==='done').length,left=its.filter(s=>st[s.id]==='todo').reduce((t,s)=>t+s.minutes,0);
+    return `${ok} of ${its.length} in place${left?` · ${fmt(left)}`:''}`};
+  const open=S.lvOpen===undefined?(nx?nx.n:n):S.lvOpen;lvShown=open;
+  const rows=LEVELS.map(l=>{
+    const kind=l.n<n?'below':l.n===n?'you':l.n===n+1?'next':l.n<=p.reach?'tried':'above';
+    const applies=l.n<=p.reach,its=applies?riskSteps(l.n).sort(byNeed(st)):[];
+    const climb=kind==='next'?l.climb.filter(id=>st[id]).map(id=>STEP_BY_ID[id]):[];
+    const tags=[];
+    if(kind==='you')tags.push(`<span class="tg you">You${p.self===n?' · your guess':''}</span>`);
+    if(kind==='next')tags.push(`<span class="tg nx">Next${applies?' · tried':''}</span>`);
+    if(kind==='tried')tags.push('<span class="tg">Tried</span>');
+    if(p.self===l.n&&kind!=='you')tags.push('<span class="tg">Your guess</span>');
+    const can=kind!=='above'&&(applies||kind==='next');
+    const meta=!can?esc(l.line):[climb.length?`Level up: ${climb.length} ${climb.length===1?'step':'steps'}`:'',
+      applies?(its.length?`Risk: ${count(its)}`:'Risk: nothing to do'):'Its risks start here'].filter(Boolean).join(' · ');
+    const t=`<span class="t"><b>${esc(l.name)}</b>${tags.join('')}</span><span class="m">${meta}</span>`;
+    const head=can?`<button type="button" class="lvh" data-lv="${l.n}" aria-expanded="${open===l.n}" aria-controls="lv-${l.n}">${t}${CHEV}</button>`:`<div class="lvh off">${t}</div>`;
+    const body=can&&open===l.n?`<div class="lvbody" id="lv-${l.n}">
+        ${kind==='next'?`<span class="k">To get here</span><p>${esc(l.up)}</p>${climb.map(s=>card(s,st[s.id])).join('')}`:''}
+        <span class="k">${applies?'The risk':'What comes with it'}</span><p>${esc(l.risk)}</p>
+        ${its.map(s=>card(s,st[s.id],whyOf(s.id))).join('')}</div>`:'';
+    return `<li class="${kind}"><span class="rail"><span class="node num">${l.n}</span><i></i></span><div class="lvc">${head}${body}</div></li>`}).join('');
+  const aIts=riskSteps(0).sort(byNeed(st)),aOpen=open==='around';
+  const around=`<section class="aroundbox"><button type="button" class="lvh" data-lv="around" aria-expanded="${aOpen}" aria-controls="lv-around"><span class="k">At every level</span><span class="t"><b>${esc(AROUND.name)}</b></span><span class="m">${aIts.length?count(aIts):'Nothing to do'}</span>${CHEV}</button>
+    ${aOpen?`<div class="lvbody" id="lv-around"><p>${esc(AROUND.risk)}</p>${aIts.map(s=>card(s,st[s.id],whyOf(s.id))).join('')}</div>`:''}</section>`;
+  const todo=STEPS.filter(s=>st[s.id]==='todo'),base=todo.filter(s=>s.tier===1);
+  const foot=`<div class="resfoot"><span><b class="num">${base.length?fmt(base.reduce((t,s)=>t+s.minutes,0)):'Essentials done'}</b>
+      <span>${base.length?`for the ${base.length} essentials · `:''}${todo.length} ${todo.length===1?'step':'steps'} in your plan</span></span>
+    <button type="button" class="btn" data-tab="plan">Open your plan</button></div>`;
+  return `<div class="result"><div class="rhead"><span class="label">Your result</span><h2>Level ${n} · ${esc(L.name)}</h2>
+      <p>${esc(L.line)}${guessNote(p)?' '+esc(guessNote(p)):''}</p></div>
+    <ol class="climb" aria-label="The five levels">${rows}</ol>${around}${foot}${sources?sourcesHTML():''}</div>`;
+}
+const sourcesHTML=()=>`<details class="src"><summary>What the scale is based on</summary><p>The levels follow how much the person leads and how much the AI does, as in research on AI autonomy. Risk grows with what you hand over. Which risks sit at which level is our reading of the evidence, not a measurement.</p>
+  <ul>${SOURCES.map(s=>`<li><a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.label)}</a></li>`).join('')}</ul></details>`;
+
 function vLevel(st){
   if(!placed())return `<div class="empty"><p>Three questions place you on the scale. About a minute.</p><button type="button" class="btn" data-tab="check">Start the check</button></div>`;
-  const p=placement(),n=levelNo(p),L=LEVELS[n-1],nx=LEVELS[n];
-  const ladder=LEVELS.map(l=>{const tags=(l.n===n?'<span class="tg you">You</span>':'')+(l.n===p.self&&l.n!==n?'<span class="tg">Your guess</span>':'')+(l.n===p.tried&&l.n>n?'<span class="tg">Tried</span>':'');
-    return `<li class="rung ${l.n===n?'cur':l.n<n?'below':''}"><span class="rn num">${l.n}</span><span class="rb"><span class="rt2"><b>${esc(l.name)}</b>${tags}</span><span class="rl">${esc(l.line)}</span></span></li>`}).join('');
-  const next=nx?`<section class="lane"><h3>Next: ${nx.n} · ${esc(nx.name)}</h3><div class="sum">${esc(nx.up)}</div>
-      ${nx.climb.filter(id=>st[id]).map(id=>card(STEP_BY_ID[id],st[id])).join('')}
-      ${nx.n>p.reach?`<p class="comes"><b>What comes with it.</b> ${esc(nx.risk)}</p>`:''}</section>`
-    :`<section class="lane"><h3>Top of the scale</h3><div class="sum">Nothing left to hand over. What keeps it safe is under your risks.</div></section>`;
-  const risk=(title,line,lv)=>{const its=STEPS.filter(s=>s.level===lv&&!s.up&&st[s.id]),ok=its.filter(s=>st[s.id]==='done').length;
-    return `<div class="risk"><div class="rh"><b>${title}</b>${its.length?`<span class="num">${ok}/${its.length} in place</span>`:''}</div><p>${esc(line)}</p>
-      ${its.length?`<ul>${its.map(s=>`<li class="${st[s.id]==='done'?'ok':''}">${esc(s.title)}</li>`).join('')}</ul>`:''}</div>`};
-  const risks=LEVELS.filter(l=>l.n<=p.reach).reverse().map(l=>risk(`${l.n} · ${esc(l.name)}`,l.risk,l.n)).join('')+risk(esc(AROUND.name),AROUND.risk,0);
-  return `<div class="plan lvl">
-    <div class="gauge"><div class="label">Your level</div><div class="big">${n}<small>${esc(L.name)}</small></div><p>${esc(L.line)} ${esc(guessNote(p))}</p></div>
-    <ol class="ladder">${ladder}</ol>
-    <div class="lvcols">${next}<section class="lane"><h3>Your risks</h3><div class="sum">Each level adds its own. Ticks come from your plan.</div><div class="risks">${risks}</div>
-      <div class="qfoot"><button type="button" class="btn" data-tab="plan">Open your plan</button></div></section></div>
-    <details class="src"><summary>What the scale is based on</summary><p>The levels follow how much the person leads and how much the AI does, as in research on AI autonomy. Risk grows with what you hand over. Which risks sit at which level is our reading of the evidence, not a measurement.</p>
-      <ul>${SOURCES.map(s=>`<li><a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.label)}</a></li>`).join('')}</ul></details>
-  </div>`;
+  return resultHTML(st,{sources:true});
 }
 
 function vPlan(st){
@@ -598,6 +650,7 @@ document.addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b)return;const d=b.dataset;
   if(d.copyPrompt!==undefined){copyText(buildPrompt()).then(promptCopied);return}
   if(d.ai!==undefined){S.ai=!S.ai;render();const n=document.querySelector(S.ai?'[data-show-prompt]':'[data-ai]');if(n)n.focus({preventScroll:true});return}
+  if(d.lv!==undefined){const k=d.lv==='around'?'around':+d.lv;S.lvOpen=lvShown===k?null:k;render();const n=document.querySelector(`[data-lv="${d.lv}"]`);if(n)n.focus({preventScroll:true});return}
   if(d.showPrompt!==undefined){S.showPrompt=!S.showPrompt;render();const n=document.querySelector('[data-show-prompt]');if(n)n.focus({preventScroll:true});return}
   if(d.restart===undefined)S.confirm=false;
   if(b.id==='theme'){setTheme(THEMES[(THEMES.indexOf(theme())+1)%THEMES.length]);return}
@@ -616,7 +669,7 @@ document.addEventListener('click',e=>{
   if(d.back||d.edit){S.cur=d.back||d.edit;S.tab='check';pick=[];render();focusStage();return}
   if(d.restart!==undefined){S.confirm=true;render();const y=document.querySelector('[data-restart-yes]');if(y)y.focus({preventScroll:true});return}
   if(d.start!==undefined){S.started=true;render();focusStage();return}
-  if(d.restartYes!==undefined){S.a={};S.ov={};S.last=null;S.cur=null;S.started=false;pick=[];try{localStorage.removeItem(KEY)}catch(_){}render();focusStage();return}
+  if(d.restartYes!==undefined){S.a={};S.ov={};S.last=null;S.cur=null;S.started=false;S.lvOpen=undefined;pick=[];try{localStorage.removeItem(KEY)}catch(_){}render();focusStage();return}
   if(d.restartNo!==undefined){render();return}
   if(d.resume!==undefined){S.cur=null;pick=[];render();focusStage();return}
   if(d.open){S.open[d.open]=!S.open[d.open];render();const n=document.querySelector(`[data-open="${d.open}"]`);if(n)n.focus({preventScroll:true});return}
