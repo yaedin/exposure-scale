@@ -37,6 +37,11 @@ All tokens sit in `:root` at the top of the style block in `index.html`. Adding 
 - Tabs: Check (onboarding; the level shows as soon as the three placement questions are answered), Level (ladder, next level with its steps, risks up to the reach, sources), Plan (lanes + time to baseline), All steps (catalog grouped by level, Around you last).
 - Question order: your level first (the payoff comes early), then risks gated by level, then around you (voice clones, teens, likeness, posts, decisions). Up steps are tier 2, so "time to baseline" stays about guardrails.
 
+## Use your AI (chat prompt)
+- The start screen's "Use your AI" row (ChatGPT, Claude, Gemini, Copy prompt) copies a prompt and opens the app. Only ChatGPT is prefilled, through `chatgpt.com/#?q=` (the part after # stays in the browser); a 14k-character query string risks a "URL too long" error elsewhere, so Claude and Gemini rely on paste. Copy is `intro.chat` and `intro.copied`.
+- `buildPrompt()` in `index.html` builds it from `content.json`: levels with guardrails and climb steps, the questions with what each option adds (+id) or marks in place (✓id), and every step with its links. The self-guess is the only question asked upfront; the model infers the rest from memory and past chats, with evidence, and asks what it couldn't tell at the end. No link back to the site (decided Nov 2026, EXE-49).
+- `node tools/check_prompt.mjs` checks coverage and the 16,000-character limit. Run it after changing `content.json` or the prompt.
+
 ## Agent skill
 `skills/exposure-scale/` is a terminal version for coding agents (Agent Skills standard: `SKILL.md` plus `scripts/`, `assets/`, `references/`).
 - `scripts/exposure.py` (Python 3.8+, standard library only) holds the logic: questions, plan, step help, read-only checks, state in `~/.exposure-scale/state.json`. The agent relays its output; `SKILL.md` sets the rules (never change settings, never handle secrets, follow the `Next:` line).
