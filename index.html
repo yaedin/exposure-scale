@@ -84,8 +84,9 @@ h1{font:600 var(--t-lg)/1 var(--f-display);letter-spacing:var(--tight);margin:0}
 .pill.add{background:var(--todo-bg);color:var(--todo)}
 .pill.ok{background:var(--done-bg);color:var(--done)}
 
-.q{display:grid;gap:16px;animation:in .28s ease both}
-@keyframes in{from{opacity:.001;transform:translateY(8px)}to{opacity:1;transform:none}}
+.q{display:grid;gap:16px;animation:in .22s ease-out both}
+/* a short slide, no fade: fading from zero blanked the screen on every answer */
+@keyframes in{from{transform:translateY(6px)}to{transform:none}}
 .q.still{animation:none}
 .q h2{font:600 var(--t-xl)/1.15 var(--f-display);letter-spacing:var(--tight);margin:0;text-wrap:balance}
 .q .hint{color:var(--muted);margin:-8px 0 0;font-size:var(--t-sm)}
