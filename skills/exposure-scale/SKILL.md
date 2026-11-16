@@ -1,6 +1,6 @@
 ---
 name: exposure-scale
-description: Checks whether a person's guardrails keep up with how far they hand work to AI, on a five-level scale (ask, work with, delegate, automate, hand over). Shows which levels are covered, which are open, what to fix first and how to reach the next level, then helps them work through the resulting plan. Asks one question at a time and assists with each step by reviewing what AI agents on this computer can reach, opening the right settings page, drafting briefs, letters and family messages, and adding AI-crawler rules to the user's own website. Use when the user wants to know how advanced their AI use is, get more out of AI safely, or protect themselves or their family from voice-clone scams, deepfakes, AI training on their data, risky AI agents, or unexplained automated decisions, or mentions Exposure Scale.
+description: Checks whether a person's guardrails keep up with how far they hand work to AI, on a five-level scale (ask, work with, delegate, automate, hand over). Shows how many guardrails are in place at each level, what to fix first and how to reach the next level, then helps them work through the resulting plan. Asks one question at a time and assists with each step by reviewing what AI agents on this computer can reach, opening the right settings page, drafting briefs, letters and family messages, and adding AI-crawler rules to the user's own website. Use when the user wants to know how advanced their AI use is, get more out of AI safely, or protect themselves or their family from voice-clone scams, deepfakes, AI training on their data, risky AI agents, or unexplained automated decisions, or mentions Exposure Scale.
 compatibility: Needs a shell and Python 3.8+ for the guided flow (falls back to reading the JSON without them). Works offline; opens web pages only when the user agrees.
 metadata:
   author: yaedin
@@ -46,13 +46,13 @@ Copy this checklist and keep it updated:
 
 **1. Status.** Run `status`. If answers exist, say where things stand and offer to continue or start over (`reset --yes` deletes everything; confirm first).
 
-**2. Offer the computer check.** Say: it reads which AI tools are installed on this computer and what they can reach (names and permission modes only), changes nothing, and sends nothing anywhere. If the user agrees, run `detect` and summarize in two or three lines. Findings appear next to the matching questions; the user still answers. Don't place the user from the findings: an installed agent says nothing about what they do most weeks.
+**2. Offer the computer check.** Say: it reads which AI tools are installed on this computer and what they can reach (names and permission modes only), changes nothing, and sends nothing anywhere. If the user agrees, run `detect` and summarize in two or three lines. Findings appear next to the matching questions; the user still answers. Don't set the user's level from the findings: an installed agent says nothing about what they did with it.
 
 **3. Questions.** Run `next`, ask, then `answer <id> <choice>`. The answer command prints what the answer put in place or added, the fact behind it with its source link, and the next question. Relay that in one or two lines, keep the source link, then ask the next question. To change an earlier answer, run `answers`, then `answer` again.
 
-The first two questions place the user: what they do most weeks, and anything further they did last month. Then come the guardrail questions, level by level up to the furthest level they've tried. When a level's questions are done, the output says whether that level is covered, partly covered or open. Questions marked `(optional)` are about other people's AI ("Around you"). Before the first one, ask whether the user wants that part; if not, go to step 4.
+The first question sets the user's level: how far they went with AI in the last month, even once. Then come the guardrail questions, level by level up to it. When a level's questions are done, the output says how many of its guardrails are in place. Questions marked `(optional)` are about other people's AI ("Around you"). Before the first one, ask whether the user wants that part; if not, go to step 4.
 
-**4. Result and plan.** Run `level` and show it: how many levels are covered, each level's state with its essential steps, the next level, and the `Do first` line. Then run `plan` if the user wants the whole list. Start with the `Do first` step unless the user picks something else. Steps tagged `essential` decide whether a level counts as covered; steps tagged `level up` move them up the scale.
+**4. Result and plan.** Run `level` and show it: how many guardrails are in place in total and at each level, each level's essential steps, the next level, and the `Do first` line. Then run `plan` if the user wants the whole list. Start with the `Do first` step unless the user picks something else. Steps tagged `essential` are the guardrails the result counts; steps tagged `level up` move them up the scale.
 
 **5. Steps.** For each step: run `step <id>`, then help according to its `help:` tags (below). When the user confirms it's done, run `done <id>`. If they want to skip it, `drop <id>`; if later, move on. Then follow Next.
 
@@ -75,7 +75,7 @@ Read only the file for the user's system: [macOS](references/macos.md), [Windows
 | Command | Does |
 |---|---|
 | `status` | Progress and the next action |
-| `level` | How many levels are covered, each level's state and steps, the next level, the step to do first |
+| `level` | How many guardrails are in place, each level's count and steps, the next level, the step to do first |
 | `next` | Current question |
 | `answer <id> <choice>` | Records an answer (numbers or values, comma-separated for multi, or `skip`), prints the next question |
 | `answers` | Answers so far |

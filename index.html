@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Exposure Scale</title>
-<meta name="description" content="See whether your guardrails keep up with how you use AI: five levels, the ones you have covered, the ones still open and what to fix first.">
+<meta name="description" content="See whether your guardrails keep up with how you use AI: five levels, the guardrails you have in place, the ones still missing and what to fix first.">
 <script>/* apply a saved theme before the page paints */try{const t=localStorage.getItem('exposure-scale-theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}</script>
 <link rel="preload" href="fonts/ibm-plex-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/ibm-plex-sans-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
@@ -18,7 +18,7 @@ body{margin:0}
 
 /* Layout: one guided flow, no tabs. Start → one question per screen → the result: a statement and the first step
    on the left, the five levels as a rail on the right (one open at a time). Design follows the owner's personal site:
-   plain ground, one sans-serif, brown lines, a green wash for what is covered or chosen. */
+   plain ground, one sans-serif, brown lines, a green wash for what is in place or chosen. */
 :root{
   /* color: ground, three text shades, one hairline, one accent for everything you can act on, one wash */
   --bg:#FFFFFF; --ink:#111111; --text:#3D3D3D; --muted:#5F5F5F; --line:#E2E2E2;
@@ -48,7 +48,7 @@ p{margin:0}
 .num{font-variant-numeric:tabular-nums}
 .label{font-size:var(--t-xs);font-weight:500;color:var(--muted)}
 
-/* the wash: a hand-painted fill behind whatever is covered or chosen. The filter roughens its edge. */
+/* the wash: a hand-painted fill behind whatever is in place or chosen. The filter roughens its edge. */
 .wash{position:relative;isolation:isolate}
 .wash::before{content:"";position:absolute;top:1px;left:1px;right:-1px;bottom:-1px;border-radius:inherit;background:var(--wash);filter:url(#wash);z-index:-1}
 
@@ -87,8 +87,7 @@ h2{font-size:var(--t-lg);line-height:1.3;font-weight:500;margin:0}
 .segs i.ok{background:var(--ink)}
 .segs i.sk{background:var(--muted)}
 .segs i.cur{background:var(--accent)}
-.reply{display:grid;gap:4px;padding-bottom:20px;border-bottom:1px solid var(--line);font-size:var(--t-sm);color:var(--text)}
-.reply .you{font-size:var(--t-xs);color:var(--muted)}
+.reply{padding-bottom:20px;border-bottom:1px solid var(--line);font-size:var(--t-sm);color:var(--text)}
 .q{display:grid;gap:20px;animation:in .22s ease-out both}
 /* a short slide, no fade: fading from zero blanked the screen on every answer */
 @keyframes in{from{transform:translateY(6px)}to{transform:none}}
@@ -103,6 +102,8 @@ h2{font-size:var(--t-lg);line-height:1.3;font-weight:500;margin:0}
 .opt .s{font-weight:400;font-size:var(--t-sm);color:var(--text)}
 .opt:hover .t{text-decoration:underline;text-decoration-color:var(--accent);text-underline-offset:3px}
 @media (max-width:620px){.keys{display:none}
+  /* the label takes its own line, so the segments keep their width */
+  .prog{flex-wrap:wrap;row-gap:8px}.prog .label{flex-basis:100%}
   /* multi-choice: keep Continue in reach while scrolling the options */
   .q.multi .acts{position:sticky;bottom:0;z-index:1;background:var(--bg);border-top:1px solid var(--line);margin:0 -20px;padding:10px 20px max(10px,env(safe-area-inset-bottom))}}
 
@@ -119,9 +120,9 @@ h2{font-size:var(--t-lg);line-height:1.3;font-weight:500;margin:0}
 .rl i{flex:1 1 auto;width:var(--w-line);min-height:20px;background:var(--line)}
 .rail>li:last-child .rl i{background:none}
 .node{width:var(--h-node);height:var(--h-node);flex:none;border-radius:50%;border:var(--w-line) solid var(--accent);display:grid;place-items:center;font-size:var(--t-lg);font-weight:500;color:var(--ink)}
-/* a level's state shows in its node: washed = covered, half washed = partly, dashed and empty = open, grey = not yours yet */
-.is-partly .node::before{clip-path:inset(50% -4px -4px -4px)}
-.is-open .node{border-style:dashed}
+/* a level's guardrails show in its node: washed = all in place, half washed = some, dashed and empty = none, grey = not yours yet */
+.is-some .node::before{clip-path:inset(50% -4px -4px -4px)}
+.is-none .node{border-style:dashed}
 .is-off .node{border-color:var(--line);color:var(--muted)}
 .lvc{min-width:0;padding-bottom:24px}
 .lvh{width:100%;min-height:var(--h-node);display:flex;flex-direction:column;justify-content:center}
@@ -177,7 +178,6 @@ footer{padding:18px 0 32px;border-top:1px solid var(--line);display:grid;gap:6px
   </header>
   <main id="view"></main>
   <footer>
-    <p id="by"></p>
     <p>Your answers stay in this browser’s local storage. There are no accounts, cookies, analytics or trackers. The site is hosted on GitHub Pages, which may log your IP address (<a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement" target="_blank" rel="noopener">GitHub’s privacy statement</a>). If you run the check in an AI app, that app’s privacy terms apply.</p>
     <p>This is a prototype and general guidance, not professional advice. <span id="checked"></span> <a href="https://github.com/yaedin/exposure-scale" target="_blank" rel="noopener">Source and feedback</a></p>
   </footer>
@@ -200,87 +200,70 @@ let pick=[]; // working selection for multi questions
 // Conditions in content.json: {question, equals | notEquals | minCount} or {minLevel}. minCount ignores exclusive options such as "None".
 function meets(c,a){
   if(!c)return true;
-  if('minLevel' in c)return placement(a).reach>=c.minLevel;
+  if('minLevel' in c)return (levelOf(a)??0)>=c.minLevel;
   const v=a[c.question];
   if('equals' in c)return v===c.equals;
   if('notEquals' in c)return v!==c.notEquals;
-  if('minCount' in c){const q=QUESTION_BY_ID[c.question];return Array.isArray(v)&&v.filter(x=>!optionsOf(q,a).find(o=>o.value===x)?.exclusive).length>=c.minCount}
+  if('minCount' in c){const q=QUESTION_BY_ID[c.question];return Array.isArray(v)&&v.filter(x=>!q.options.find(o=>o.value===x)?.exclusive).length>=c.minCount}
   return true;
 }
 const visibleQuestions=(a=S.a)=>QUESTIONS.filter(q=>meets(q.showIf,a));
-// "above" hides the options at or below the level picked in another question, so "Have you gone further?" only lists what is further
-function optionsOf(q,a=S.a){
-  if(!q.above)return q.options;
-  const from=QUESTION_BY_ID[q.above],v=a[from.id];
-  if(v==null||v==='skip')return q.options;
-  const sel=from.multi?v:[v],lv=Math.max(0,...from.options.filter(o=>sel.includes(o.value)&&o.level!=null).map(o=>o.level));
-  return q.options.filter(o=>o.exclusive||o.level==null||o.level>lv);
-}
-// Placement: options carry a level. "habit" is what the person does most weeks, "tried" anything further they did last month.
-// Their level is the habit (or what they tried, if the habit was skipped); reach is the furthest of both,
-// and the guardrails of every level up to it apply.
-function placement(a=S.a){
-  const top=role=>{let m=null;QUESTIONS.forEach(q=>{const v=a[q.id];if(q.place!==role||v==null||v==='skip'||!meets(q.showIf,a))return;
-    const sel=q.multi?v:[v];optionsOf(q,a).forEach(o=>{if(sel.includes(o.value)&&o.level!=null)m=Math.max(m??0,o.level)})});return m};
-  const tried=top('tried'),habit=top('habit'),level=habit??tried;
-  return {tried,habit,level,reach:Math.max(tried??0,habit??0,level==null?0:1)};
-}
-const levelNo=p=>p.level==null?null:Math.max(1,p.level); // "nothing further" alone still sits on level 1
+// The level: the furthest the person went with AI in the last month. The guardrails of every level up to it apply.
+function levelOf(a=S.a){const q=QUESTIONS.find(q=>q.place),o=q&&q.options.find(o=>o.value===a[q.id]);return o?o.level:null}
 const linksOf=s=>(s.links||[]).filter(l=>meets(l.showIf,S.a));
 function effectsOf(q,ans){
   const o={add:[],done:[]};if(ans==null||ans==='skip')return o;
   const sel=q.multi?ans:[ans];
-  [...optionsOf(q).filter(x=>sel.includes(x.value)),...(q.effects||[]).filter(e=>meets(e.if,S.a))]
+  [...q.options.filter(x=>sel.includes(x.value)),...(q.effects||[]).filter(e=>meets(e.if,S.a))]
     .forEach(x=>{o.add.push(...(x.add||[]));o.done.push(...(x.done||[]))});
   return o;
 }
-// The level adds the guardrails of every level up to your reach and the steps that get you to the next level
+// The level adds the guardrails of every level up to yours and the steps that get you to the next level
 function levelSteps(){
-  const p=placement(),n=levelNo(p);if(n==null)return [];
-  return [...LEVELS.filter(l=>l.n<=p.reach).flatMap(l=>l.guards),...(LEVELS[n]?.climb||[])];
+  const n=levelOf();if(n==null)return [];
+  return [...LEVELS.filter(l=>l.n<=n).flatMap(l=>l.guards),...(LEVELS[n]?.climb||[])];
 }
 function derived(){const st={},add=id=>{if(st[id]!=='done')st[id]='todo'};levelSteps().forEach(add);
   visibleQuestions().forEach(q=>{const e=effectsOf(q,S.a[q.id]);e.add.forEach(add);e.done.forEach(id=>st[id]='done')});return st}
 function statusMap(){const st=derived(),out={};STEPS.forEach(s=>{const o=S.ov[s.id];const v=o==='off'?undefined:(o||st[s.id]);if(v)out[s.id]=v});return out}
-// Cover: a level is covered when every essential guardrail (tier 1) in the plan at that level is in place,
-// partly covered when some are, open when none is. Level 0 is "Around you".
+// Cover: how many of a level's guardrails are in place. A guardrail is an essential step (tier 1) in the plan
+// at that level. Level 0 is "Around you". The result counts the guardrails of every level up to yours.
 function coverOf(lv,st){
   const its=STEPS.filter(s=>s.level===lv&&!s.up&&s.tier===1&&st[s.id]),ok=its.filter(s=>st[s.id]==='done').length;
-  return {n:lv,total:its.length,ok,state:ok===its.length?'covered':ok?'partly':'open'};
+  return {n:lv,total:its.length,ok};
 }
 function cover(st=statusMap()){
-  const p=placement(),levels=LEVELS.filter(l=>l.n<=p.reach).map(l=>coverOf(l.n,st));
-  return {levels,covered:levels.filter(l=>l.state==='covered').length};
+  const n=levelOf()??0,levels=LEVELS.filter(l=>l.n<=n).map(l=>coverOf(l.n,st));
+  return {levels,ok:levels.reduce((x,l)=>x+l.ok,0),total:levels.reduce((x,l)=>x+l.total,0)};
 }
 // What to do first: an essential guardrail before anything else, then by impact, the higher level, the shorter time
 const byNeed=(a,b)=>(a.tier!==1)-(b.tier!==1)||b.impact-a.impact||b.level-a.level||a.minutes-b.minutes;
 function firstStep(st=statusMap()){
-  const reach=placement().reach;
-  return STEPS.filter(s=>st[s.id]==='todo'&&!s.up&&s.level>=1&&s.level<=reach).sort(byNeed)[0]||null;
+  const n=levelOf()??0;
+  return STEPS.filter(s=>st[s.id]==='todo'&&!s.up&&s.level>=1&&s.level<=n).sort(byNeed)[0]||null;
 }
 const isOptional=q=>!!OPTIONAL[q.part];
 // The next question: the main check first; the optional part only once the person has asked for it
 function current(){const V=visibleQuestions();if(S.cur){const q=V.find(q=>q.id===S.cur);if(q)return q}
   return V.find(q=>!(q.id in S.a)&&(S.around||!isOptional(q)))}
-const placed=()=>levelNo(placement())!=null&&!visibleQuestions().some(q=>q.place&&!(q.id in S.a));
+const placed=()=>levelOf()!=null;
 
 const fmt=m=>m<60?`${m} min`:`${Math.floor(m/60)} h${m%60?' '+(m%60)+' min':''}`;
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-function ansText(q,ans){if(ans==='skip')return 'Skipped';const o=optionsOf(q),sel=q.multi?ans:[ans];return o.filter(x=>sel.includes(x.value)).map(x=>x.label).join(', ')||'—'}
-const STATE={covered:'Covered',partly:'Partly covered',open:'Open'};
-const coverText=c=>c.total?`${STATE[c.state]} · ${c.ok} of ${c.total} ${c.total===1?'guardrail':'guardrails'} in place`:'Nothing to do';
+function ansText(q,ans){if(ans==='skip')return 'Skipped';const o=q.options,sel=q.multi?ans:[ans];return o.filter(x=>sel.includes(x.value)).map(x=>x.label).join(', ')||'—'}
+const coverText=c=>c.total?`${c.ok} of ${c.total} in place`:'Nothing to do';
 const srcLink=id=>{const s=SOURCE_BY_ID[id];return s?` <a href="${esc(s.url)}" target="_blank" rel="noopener">Source: ${esc(s.label)}</a>`:''};
 // Which answer put a step in the plan, for the "From your answer" line
 function whyOf(id){const out=[];
   visibleQuestions().forEach(q=>{const ans=S.a[q.id];if(ans==null||ans==='skip')return;const sel=q.multi?ans:[ans];
-    const hit=optionsOf(q).filter(o=>sel.includes(o.value)&&(o.add||[]).includes(id)).map(o=>o.label);
+    const hit=q.options.filter(o=>sel.includes(o.value)&&(o.add||[]).includes(id)).map(o=>o.label);
     if(hit.length)out.push(`${q.label} · ${hit.join(', ')}`)});
   return out.join('; ')}
 
 /* ===== chat prompt: the check in the person's own AI app, built from content.json ===== */
 // The model asks only the level upfront, reads memory and past chats as evidence for the rest, shows the result,
 // then asks what it couldn't tell. tools/check_prompt.mjs checks coverage and size.
-const condText=c=>!c?'':'minLevel' in c?`only if reach ≥ ${c.minLevel}`
+const condText=c=>!c?'':'minLevel' in c?`only if my level ≥ ${c.minLevel}`
   :'minCount' in c?`only if ${c.question} has an answer other than None`
   :'equals' in c?`only if ${c.question} = ${c.equals}`:`only if ${c.question} ≠ ${c.notEquals}`;
 const effText=x=>[...(x.add||[]).map(id=>'+'+id),...(x.done||[]).map(id=>'✓'+id)].join(' ');
@@ -289,22 +272,22 @@ const PROMPT_REF='—— Reference for the AI: scoring, levels, questions, steps
 function buildPrompt(){
   const L=LEVELS.map(l=>`${l.n} ${l.name}: ${l.line}${l.up?` To get here: ${l.up}`:''} Risk: ${l.risk} Guardrails: ${l.guards.join(', ')}.${l.climb.length?` Climb: ${l.climb.join(', ')}.`:''}`).join('\n');
   const Q=QUESTIONS.map(q=>{
-    const role=q.place==='tried'?' [tried: the highest level picked]':q.place==='habit'?' [my level]':'';
+    const role=q.place?' [my level]':'';
     const opts=q.options.map(o=>`${o.label}${o.level!=null?` (${o.level})`:''}${o.exclusive?' (alone)':''}${effText(o)?' → '+effText(o):''}`);
     return `${q.id}: ${q.text}${role}${isOptional(q)?' [optional]':''}${q.multi?' (pick several)':''}${q.showIf?` (${condText(q.showIf)})`:''}\n  ${opts.join(' / ')}`}).join('\n');
   const T=STEPS.map(s=>{const ln=(s.links||[]).map(l=>`${l.url}${l.showIf?` (${condText(l.showIf).replace('only if ','')})`:''}`);
     return `${s.id}: ${s.title} · ${s.minutes} min · impact ${s.impact}${s.tier===1?' · essential':''}${s.withOthers?' · with others':''}${ln.length?' · '+ln.join(' '):''}`}).join('\n');
   return `Run the Exposure Scale check with me (https://yaedin.github.io/exposure-scale/). It checks whether my guardrails keep up with how far I hand work to AI.
 
-1. First ask how far I go with AI in most weeks, 1 to 5, with the levels from the reference below. Wait for my answer.
+1. First ask how far I went with AI in the last month, even once, 1 to 5, with the levels from the reference below. Wait for my answer.
 2. Then work out the rest yourself from what you know about me: memory, past chats, this account. Back each answer with what I did and roughly when. No evidence, no answer. If you can't see memory or past chats, say so.
-3. Show each level up to mine as covered, partly covered or open, with the evidence. Then the one step to do first and the next few, with links. Keep it short.
+3. Show how many of my guardrails are in place, in total and for each level up to mine, with the evidence. Then the one step to do first and the next few, with links. Keep it short.
 4. End with two to four numbered questions for what you couldn't tell, and update the result when I answer.
 
 Use only the reference below; don't invent steps or links. Never ask for passwords, codes or account numbers, and don't change any settings for me.
 
 ${PROMPT_REF}
-How to score: my level is the weekly answer (at least 1); my reach is the higher of that and anything I tried. My plan: the guardrails of every level up to my reach, the climb steps of the next level and the steps my answers add (+id), minus those already in place (✓id). A level is covered when every essential step of that level in my plan is in place, partly covered when some are, open when none is. Do first: the essential step still to do with the highest impact, at the highest level. Show at most eight steps with title, time, why it applies and link, and say how many more. Say what the next level looks like and how to get there. Questions marked optional are about other people's AI: offer them at the end.
+How to score: my level is my answer to the first question. My plan: the guardrails of every level up to mine, the climb steps of the next level and the steps my answers add (+id), minus those already in place (✓id). My guardrails are the essential steps in my plan at levels 1 to mine; count how many are in place. Do first: the essential step still to do with the highest impact, at the highest level. Show at most eight steps with title, time, why it applies and link, and say how many more. Say what the next level looks like and how to get there. Questions marked optional are about other people's AI: offer them at the end.
 
 LEVELS
 ${L}
@@ -377,37 +360,27 @@ const say=t=>{const n=$('copied');if(n)n.textContent=t};
 const promptCopied=ok=>say(ok?INTRO.copied:'Couldn’t copy. Use Copy prompt, then paste it.');
 
 /* ----- questions ----- */
-// After each answer: what it changed, the fact behind it with its source, and the level's state once its questions are done
+// Above a question, at most one line about the answer before it: which levels the check goes through,
+// or the fact behind the pick, with its source
 function replyHTML(q){
   if(!q||!(q.id in S.a)||S.a[q.id]==='skip')return '';
-  const st=statusMap(),lines=[],title=id=>STEP_BY_ID[id].title;
-  const list=ids=>ids.length>2?`${ids.length} steps, the first is “${esc(title(ids[0]))}”`:ids.map(id=>esc(title(id))).join(' · ');
-  if(q.place){
-    if(placed()){const p=placement(),n=levelNo(p);
-      lines.push(`<span><b>Level ${n} · ${esc(LEVELS[n-1].name)}.</b> ${p.reach>n?`You’ve tried level ${p.reach}, so its guardrails count too. `:''}Now the guardrails${p.reach>1?`, level by level up to ${p.reach}`:' for level 1'}.</span>`)}
-  }else{
-    const e=effectsOf(q,S.a[q.id]),ok=[...new Set(e.done)],add=[...new Set(e.add)].filter(id=>st[id]==='todo');
-    if(ok.length)lines.push(`<span>In place: ${list(ok)}</span>`);
-    if(add.length)lines.push(`<span>To do: ${list(add)}</span>`);
-    const sel=q.multi?S.a[q.id]:[S.a[q.id]],seen=new Set();
-    optionsOf(q).filter(o=>sel.includes(o.value)&&o.note&&!seen.has(o.note)&&seen.add(o.note)).forEach(o=>lines.push(`<span>${esc(o.note)}${srcLink(o.src)}</span>`));
-    if(q.covers&&!visibleQuestions().some(x=>x.covers===q.covers&&!(x.id in S.a)))
-      lines.push(`<span><b>Level ${q.covers} · ${esc(LEVELS[q.covers-1].name)}:</b> ${coverText(coverOf(q.covers,st)).toLowerCase()}</span>`);
-  }
-  return `<div class="reply" aria-live="polite"><span class="you">${esc(q.label)} · ${esc(ansText(q,S.a[q.id]))}</span>${lines.join('')}</div>`;
+  if(q.place){const n=levelOf();
+    return `<p class="reply" aria-live="polite">${n>1?`You go up to level ${n} · ${esc(LEVELS[n-1].name)}. The next questions check your guardrails for levels 1 to ${n}.`:`You’re at level 1 · ${esc(LEVELS[0].name)}. The next questions check your guardrails for it.`}</p>`}
+  const sel=q.multi?S.a[q.id]:[S.a[q.id]],o=q.options.find(o=>sel.includes(o.value)&&o.note);
+  return o?`<p class="reply" aria-live="polite">You picked “${esc(o.label)}”. ${esc(o.note)}${srcLink(o.src)}</p>`:'';
 }
 function vQuestion(q){
-  const V=visibleQuestions().filter(x=>isOptional(x)===isOptional(q)),opts=optionsOf(q),answered=V.filter(x=>x.id in S.a).length;
-  const lastQ=S.last&&visibleQuestions().find(x=>x.id===S.last);
+  const V=visibleQuestions().filter(x=>isOptional(x)===isOptional(q)),opts=q.options,answered=V.filter(x=>x.id in S.a).length;
   if(q.multi&&pick.__for!==q.id){pick=Array.isArray(S.a[q.id])?S.a[q.id].filter(v=>opts.some(o=>o.value===v)):[];pick.__for=q.id}
   const prevIdx=V.indexOf(q)-1,front=V.find(x=>!(x.id in S.a)&&x!==q);
+  const lastQ=prevIdx>=0&&V[prevIdx].id===S.last?V[prevIdx]:null; // only right after answering the question before this one
   // going back to an answered question: offer the way back to where they left off
   const resume=q.id in S.a?`<button type="button" class="link" data-resume>${front?`Back to question ${V.indexOf(front)+1}`:'Back to the result'}</button>`
     :isOptional(q)?'<button type="button" class="link" data-around-stop>Back to the result</button>':'';
-  const where=q.covers?`Level ${q.covers} · ${LEVELS[q.covers-1].name}`:PARTS.find(p=>p.id===q.part).name;
+  const where=q.covers?`Guardrails for level ${q.covers} · ${LEVELS[q.covers-1].name}`:PARTS.find(p=>p.id===q.part).name;
   return `<div class="stage">
-    <div class="prog"><span class="label">${esc(where)}</span><div class="segs" role="img" aria-label="${answered} of ${V.length} answered">${V.map(x=>`<i class="${x===q?'cur':!(x.id in S.a)?'':S.a[x.id]==='skip'?'sk':'ok'}"></i>`).join('')}</div>
-      <span class="num">${V.indexOf(q)+1}/${V.length}</span></div>
+    <div class="prog"><span class="label">${esc(where)}</span>${V.length>1?`<div class="segs" role="img" aria-label="${answered} of ${V.length} answered">${V.map(x=>`<i class="${x===q?'cur':!(x.id in S.a)?'':S.a[x.id]==='skip'?'sk':'ok'}"></i>`).join('')}</div>
+      <span class="num">${V.indexOf(q)+1}/${V.length}</span>`:''}</div>
     ${replyHTML(lastQ)}
     <div class="${stageClass('q-'+q.id)}${q.multi?' multi':''}" id="q-${q.id}">
       <h1>${esc(q.text)}</h1>${q.hint?`<p class="hint">${esc(q.hint)}</p>`:''}
@@ -421,7 +394,7 @@ function vQuestion(q){
 // Skipped both level questions: there is nothing to show yet
 function vUnplaced(){
   return `<div class="stage ${stageClass('unplaced')}"><h1>Pick your level to see the result</h1><p class="lede">The guardrails depend on how far you go with AI, so that question can’t be skipped.</p>
-    <div class="acts"><button type="button" class="btn wash" data-edit="${QUESTIONS.find(q=>q.place==='habit').id}">Pick your level</button>${restartHTML()}</div></div>`;
+    <div class="acts"><button type="button" class="btn wash" data-edit="${QUESTIONS.find(q=>q.place).id}">Pick your level</button>${restartHTML()}</div></div>`;
 }
 
 /* ----- result ----- */
@@ -441,14 +414,14 @@ function groupHTML(lv,st){
 }
 let lvShown=null; // the level open on screen, so a tap on it closes it
 function vResult(){
-  const st=statusMap(),p=placement(),n=levelNo(p),c=cover(st),m=c.levels.length,k=c.covered,first=firstStep(st),nx=LEVELS[n];
-  const verdict=k===m?(m===1?'Your guardrails keep up with level 1':`Your guardrails keep up with all ${m} levels you use`)
-    :k===0?(m===1?'Level 1 is still open':`None of the ${m} levels you use is covered yet`)
-    :`${k} of the ${m} levels you use ${k===1?'is':'are'} covered`;
-  const open=S.lvOpen===undefined?(first?first.level:nx&&nx.n>p.reach?nx.n:n):S.lvOpen;lvShown=open;
+  const st=statusMap(),n=levelOf(),c=cover(st),first=firstStep(st),nx=LEVELS[n];
+  const verdict=c.ok===c.total?`All ${c.total} of your guardrails are in place`
+    :c.ok===0?`None of your ${c.total} guardrails is in place yet`
+    :`${c.ok} of your ${c.total} guardrails ${c.ok===1?'is':'are'} in place`;
+  const open=S.lvOpen===undefined?(first?first.level:nx?nx.n:n):S.lvOpen;lvShown=open;
   const rows=LEVELS.map(l=>{
-    const mine=l.n<=p.reach,next=l.n===n+1,cv=mine?c.levels[l.n-1]:null,can=mine||next;
-    const tag=l.n===n?'Your level':mine&&l.n>n?'Tried':next?'Next':'';
+    const mine=l.n<=n,next=l.n===n+1,cv=mine?c.levels[l.n-1]:null,can=mine||next;
+    const tag=l.n===n?'Your level':next?'Next':'';
     const meta=[cv?coverText(cv):next?'':l.line].filter(Boolean).map(esc);
     const t=`<h2>${esc(l.name)}</h2><span class="m">${[tag?`<b>${tag}</b>`:'',...meta].filter(Boolean).join(' · ')}</span>`;
     const head=can?`<button type="button" class="lvh" data-lv="${l.n}" aria-expanded="${open===l.n}" aria-controls="lv-${l.n}">${t}</button>`:`<div class="lvh">${t}</div>`;
@@ -458,22 +431,21 @@ function vResult(){
         ${mine?`<p>${esc(l.risk)}</p>
           ${l.case?`<p class="case">${esc(l.case.text)}${srcLink(l.case.src)}</p>`:''}
           ${echoed.length?`<p class="case">${esc(l.echo.text)} ${esc(echoed.join(' · '))}</p>`:''}
-          ${groupHTML(l.n,st)}
-          ${climb.length?`<span class="sub">To make it your level</span><p>${esc(l.up)}</p>${stepList(climb,st,false)}`:''}`
+          ${groupHTML(l.n,st)}`
         :`<p>${esc(l.up)}</p>${stepList(climb,st,false)}<span class="sub">What comes with it</span><p>${esc(l.risk)}</p><span class="sub">The guardrails it needs</span>
           <ul class="plain">${l.guards.map(id=>STEP_BY_ID[id]).filter(s=>s.tier===1).map(s=>`<li>${esc(s.title)}</li>`).join('')}</ul>`}</div>`:'';
-    return `<li class="${cv?'is-'+cv.state:'is-off'}"><span class="rl"><span class="node num${cv&&cv.state!=='open'?' wash':''}">${l.n}</span><i></i></span><div class="lvc">${head}${body}</div></li>`}).join('');
+    return `<li class="${!cv?'is-off':cv.ok===cv.total?'is-all':cv.ok?'is-some':'is-none'}"><span class="rl"><span class="node num${cv&&cv.ok?' wash':''}">${l.n}</span><i></i></span><div class="lvc">${head}${body}</div></li>`}).join('');
   const lead=`<section class="lead stick ${stageClass('result')}"><span class="label">Your result</span><h1>${verdict}</h1>
-    <p class="lede">You work at level ${n} · ${esc(LEVELS[n-1].name)}${p.reach>n?` and have tried level ${p.reach}`:''}. A level counts as covered when its guardrails are in place.</p>
+    <p class="lede">${n>1?`You go up to level ${n} · ${esc(LEVELS[n-1].name)}, so the guardrails for levels 1 to ${n} count.`:`You’re at level 1 · ${esc(LEVELS[0].name)}, so its guardrails count.`}</p>
     ${firstHTML(first,st,nx)}</section>`;
   return `<div class="cols">${lead}<section class="side"><ol class="rail" aria-label="The five levels">${rows}</ol>${aroundHTML(st,open)}${toolsHTML()}</section></div>`;
 }
 // The one next step. When nothing is left to do, it points to the level above yours.
 function firstHTML(s,st,nx){
-  if(!s)return `<div class="first"><span class="label">Nothing left to do at your levels</span><h2>${nx?`Level ${nx.n} · ${esc(nx.name)} is the next step up`:'You’re at the top of the scale with every guardrail in place'}</h2>
+  if(!s)return `<div class="first"><span class="label">Nothing left to do</span><h2>${nx?`Level ${nx.n} · ${esc(nx.name)} is the next step up`:'You’re at the top of the scale with every guardrail in place'}</h2>
     ${nx?`<p>${esc(nx.up)}</p><div class="acts"><button type="button" class="btn wash" data-lv-show="${nx.n}">Show level ${nx.n}</button></div>`:''}</div>`;
   const why=whyOf(s.id),links=linksOf(s);
-  return `<div class="first"><span class="label">${s.tier===1?'Do this first':'Next best step'} · ${fmt(s.minutes)} · level ${s.level}</span><h2>${esc(s.title)}</h2>
+  return `<div class="first"><span class="label">${s.tier===1?'Do this first':'Next best step'} · ${fmt(s.minutes)}</span><h2>${esc(s.title)}</h2>
     ${s.why?`<p>${esc(s.why)}</p>`:''}${why?`<p class="sm">From your answer: ${esc(why)}</p>`:''}
     ${links.length?`<span class="links">${links.map(l=>`<a href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.label)}</a>`).join('')}</span>`:''}
     ${s.agentHelp?`<p class="sm">${esc(s.agentHelp)} <a href="${SKILL_URL}" target="_blank" rel="noopener">Get the skill</a></p>`:''}
@@ -486,7 +458,7 @@ function aroundHTML(st,open){
     <div class="acts"><button type="button" class="btn" data-around>Answer ${qs.length} more questions</button></div></section>`;
   const c=coverOf(0,st),isOpen=open==='around';
   return `<section class="around"><button type="button" class="lvh" data-lv="around" aria-expanded="${isOpen}" aria-controls="lv-around"><h2>${esc(AROUND.name)}</h2>
-      <span class="m">${esc(c.total?`${c.ok} of ${c.total} ${c.total===1?'essential':'essentials'} in place`:'Nothing essential to do')}${left?` · ${left} ${left===1?'question':'questions'} left`:''}</span></button>
+      <span class="m">${esc(coverText(c))}${left?` · ${left} ${left===1?'question':'questions'} left`:''}</span></button>
     ${isOpen?`<div class="lvbody" id="lv-around"><p>${esc(AROUND.risk)}</p>${groupHTML(0,st)}
       ${left?`<div class="acts"><button type="button" class="btn" data-around>Answer the last ${left}</button></div>`:''}</div>`:''}</section>`;
 }
@@ -503,19 +475,16 @@ function toolsHTML(){
 }
 // The result as plain text, to keep or send. Built in the browser; nothing is sent anywhere.
 function resultText(){
-  const st=statusMap(),p=placement(),n=levelNo(p),c=cover(st),first=firstStep(st);
+  const st=statusMap(),n=levelOf(),c=cover(st),first=firstStep(st);
   return [`Exposure Scale · ${new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})}`,
-    `I work at level ${n} · ${LEVELS[n-1].name}${p.reach>n?` and have tried level ${p.reach}`:''}. ${c.covered} of ${c.levels.length} levels covered.`,
-    ...c.levels.map(l=>`${l.n} ${LEVELS[l.n-1].name}: ${coverText(l).toLowerCase()}`),
+    `I go up to level ${n} · ${LEVELS[n-1].name}. ${c.ok} of my ${c.total} guardrails ${c.ok===1?'is':'are'} in place.`,
+    ...c.levels.map(l=>`${l.n} ${LEVELS[l.n-1].name}: ${coverText(l)}`),
     ...(first?[`First step: ${first.title} (${fmt(first.minutes)})`]:[]),
     'https://yaedin.github.io/exposure-scale/'].join('\n');
 }
 
 /* ===== actions ===== */
 function answer(q,v){S.a[q.id]=v;S.last=q.id;S.cur=null;S.confirm=false;pick=[];
-  // drop answers that named an option this answer has removed ("above")
-  QUESTIONS.filter(x=>x.above===q.id&&x.id in S.a&&S.a[x.id]!=='skip').forEach(x=>{const ok=optionsOf(x).map(o=>o.value),kept=[].concat(S.a[x.id]).filter(v=>ok.includes(v));
-    if(!kept.length)delete S.a[x.id];else S.a[x.id]=x.multi?kept:kept[0]});
   save();render();focusStage();window.scrollTo(0,0)}
 const ADVANCE_MS=180;let advancing=false;
 function focusStage(){const b=document.querySelector('.q .opt, .q .btn, .lead .btn');if(b)b.focus({preventScroll:true})}
@@ -545,8 +514,8 @@ document.addEventListener('click',e=>{
   const q=current();
   if(advancing&&(d.pick!==undefined||d.next!==undefined||d.skip!==undefined||d.back))return;
   if(d.pick!==undefined&&q){
-    if(q.multi){const o=optionsOf(q).find(x=>x.value===d.pick);
-      if(o.exclusive)pick=pick.includes(d.pick)?[]:[d.pick];else{pick=pick.filter(v=>!optionsOf(q).find(x=>x.value===v).exclusive);pick=pick.includes(d.pick)?pick.filter(v=>v!==d.pick):[...pick,d.pick]}
+    if(q.multi){const o=q.options.find(x=>x.value===d.pick);
+      if(o.exclusive)pick=pick.includes(d.pick)?[]:[d.pick];else{pick=pick.filter(v=>!q.options.find(x=>x.value===v).exclusive);pick=pick.includes(d.pick)?pick.filter(v=>v!==d.pick):[...pick,d.pick]}
       pick.__for=q.id;render();refocus(`[data-pick="${d.pick}"]`);return}
     // single choice: show the pick land for a moment, then move on
     document.querySelectorAll('.q .opt').forEach(n=>{n.setAttribute('aria-pressed',n===b);n.querySelector('.mk').classList.toggle('wash',n===b)});
@@ -560,7 +529,7 @@ document.addEventListener('keydown',e=>{
   if(e.metaKey||e.ctrlKey||e.altKey||!e.target.closest)return;
   if(onStart()){if(e.key==='Enter'&&!e.target.closest('button,a,.promptbox')){e.preventDefault();S.started=true;render();focusStage()}return}
   const q=current();if(!q)return;
-  const n=parseInt(e.key,10),opts=optionsOf(q);
+  const n=parseInt(e.key,10),opts=q.options;
   if(n>=1&&n<=opts.length){e.preventDefault();document.querySelector(`[data-pick="${opts[n-1].value}"]`).click()}
   // Enter continues even when an option has focus (number keys move focus there); Space still toggles it
   else if(e.key==='Enter'&&q.multi&&pick.length&&!e.target.closest('.acts button')){e.preventDefault();answer(q,[...pick])}
@@ -572,7 +541,6 @@ fetch('content.json').then(r=>r.json()).then(c=>{
   QUESTION_BY_ID=Object.fromEntries(QUESTIONS.map(q=>[q.id,q]));
   SOURCE_BY_ID=Object.fromEntries(SOURCES.map(s=>[s.id,s]));
   OPTIONAL=Object.fromEntries(PARTS.filter(p=>p.optional).map(p=>[p.id,true]));
-  $('by').textContent=INTRO.by;
   $('checked').textContent=`Links last checked ${new Date(c.linksChecked+'T12:00').toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})}.`;
   render();
 }).catch(()=>{$('view').innerHTML='<p class="note">Couldn’t load the questions. Reload the page.</p>'});

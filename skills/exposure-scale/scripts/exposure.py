@@ -4,7 +4,7 @@
 Usage: python3 scripts/exposure.py <command> [args]
 
   status              where things stand and what to do next
-  level               the five levels: which ones are covered, which are open, and the next level
+  level               the five levels: how many guardrails are in place at each, and the next level
   next                the current question
   answer Q CHOICE     answer question Q with option number(s), value(s) or "skip"; prints the next question
   answers             answers so far (change one by answering it again)
@@ -70,26 +70,12 @@ def save(state):
 
 
 # ===== logic (mirrors index.html; tools/compare_logic.mjs keeps them in step) =====
-def options_of(q, a):
-    """"above" hides the options at or below the level picked in another question, so "Have you gone further?"
-    only lists what is further."""
-    if not q.get("above"):
-        return q["options"]
-    source = QUESTION[q["above"]]
-    v = a.get(source["id"])
-    if v is None or v == "skip":
-        return q["options"]
-    sel = v if source.get("multi") else [v]
-    lv = max([0] + [o["level"] for o in source["options"] if o["value"] in sel and o.get("level") is not None])
-    return [o for o in q["options"] if o.get("exclusive") or o.get("level") is None or o["level"] > lv]
-
-
 def meets(c, a):
     """Conditions: {question, equals | notEquals | minCount} or {minLevel}. minCount ignores exclusive options such as "None"."""
     if not c:
         return True
     if "minLevel" in c:
-        return placement(a)["reach"] >= c["minLevel"]
+        return (level_of(a) or 0) >= c["minLevel"]
     v = a.get(c["question"])
     if "equals" in c:
         return v == c["equals"]
@@ -98,7 +84,7 @@ def meets(c, a):
     if "minCount" in c:
         if not isinstance(v, list):
             return False
-        exclusive = {o["value"] for o in options_of(QUESTION[c["question"]], a) if o.get("exclusive")}
+        exclusive = {o["value"] for o in QUESTION[c["question"]]["options"] if o.get("exclusive")}
         return len([x for x in v if x not in exclusive]) >= c["minCount"]
     return True
 
@@ -107,41 +93,23 @@ def visible(a):
     return [q for q in QUESTIONS if meets(q.get("showIf"), a)]
 
 
-def placement(a):
-    """Options carry a level. "habit" is what the person does most weeks, "tried" anything further they did last
-    month. Their level is the habit (or what they tried, if the habit was skipped); reach is the furthest of both,
-    and the guardrails of every level up to it apply."""
-    def top(role):
-        m = None
-        for q in QUESTIONS:
-            v = a.get(q["id"])
-            if q.get("place") != role or v is None or v == "skip" or not meets(q.get("showIf"), a):
-                continue
-            sel = v if q.get("multi") else [v]
-            for o in options_of(q, a):
-                if o["value"] in sel and o.get("level") is not None:
-                    m = max(m or 0, o["level"])
-        return m
-    tried, habit = top("tried"), top("habit")
-    level = habit if habit is not None else tried
-    return {"tried": tried, "habit": habit, "level": level, "reach": max(tried or 0, habit or 0, 0 if level is None else 1)}
-
-
-def level_no(p):
-    return None if p["level"] is None else max(1, p["level"])  # "nothing further" alone still sits on level 1
+def level_of(a):
+    """The level: the furthest the person went with AI in the last month. The guardrails of every level up to it apply."""
+    q = next((q for q in QUESTIONS if q.get("place")), None)
+    o = next((o for o in q["options"] if o["value"] == a.get(q["id"])), None) if q else None
+    return o["level"] if o else None
 
 
 def placed(a):
-    return level_no(placement(a)) is not None and not any(q.get("place") and q["id"] not in a for q in visible(a))
+    return level_of(a) is not None
 
 
 def level_steps(a):
-    """The level adds the guardrails of every level up to your reach and the steps that get you to the next level."""
-    p = placement(a)
-    n = level_no(p)
+    """The level adds the guardrails of every level up to yours and the steps that get you to the next level."""
+    n = level_of(a)
     if n is None:
         return []
-    out = [i for l in LEVELS if l["n"] <= p["reach"] for i in l["guards"]]
+    out = [i for l in LEVELS if l["n"] <= n for i in l["guards"]]
     return out + (LEVELS[n]["climb"] if n < len(LEVELS) else [])
 
 
@@ -154,7 +122,7 @@ def effects_of(q, ans, a):
     if ans is None or ans == "skip":
         return add, done
     sel = ans if q.get("multi") else [ans]
-    parts = [o for o in options_of(q, a) if o["value"] in sel] + [e for e in q.get("effects", []) if meets(e.get("if"), a)]
+    parts = [o for o in q["options"] if o["value"] in sel] + [e for e in q.get("effects", []) if meets(e.get("if"), a)]
     for p in parts:
         add += p.get("add", [])
         done += p.get("done", [])
@@ -188,17 +156,17 @@ def current(a):
 
 
 def cover_of(lv, st):
-    """A level is covered when every essential guardrail (tier 1) in the plan at that level is in place,
-    partly covered when some are, open when none is. Level 0 is "Around you"."""
+    """How many of a level's guardrails are in place. A guardrail is an essential step (tier 1) in the plan at that
+    level. Level 0 is "Around you"."""
     its = [s for s in STEPS if s["level"] == lv and not s.get("up") and s["tier"] == 1 and st.get(s["id"])]
-    ok = sum(1 for s in its if st[s["id"]] == "done")
-    return {"n": lv, "total": len(its), "ok": ok, "state": "covered" if ok == len(its) else "partly" if ok else "open"}
+    return {"n": lv, "total": len(its), "ok": sum(1 for s in its if st[s["id"]] == "done")}
 
 
 def cover(state):
-    st, p = status_map(state), placement(state["answers"])
-    levels = [cover_of(l["n"], st) for l in LEVELS if l["n"] <= p["reach"]]
-    return {"levels": levels, "covered": sum(1 for l in levels if l["state"] == "covered")}
+    """The guardrails of every level up to the person's."""
+    st, n = status_map(state), level_of(state["answers"]) or 0
+    levels = [cover_of(l["n"], st) for l in LEVELS if l["n"] <= n]
+    return {"levels": levels, "ok": sum(l["ok"] for l in levels), "total": sum(l["total"] for l in levels)}
 
 
 def order(steps):
@@ -207,18 +175,13 @@ def order(steps):
 
 
 def first_step(state):
-    st, reach = status_map(state), placement(state["answers"])["reach"]
-    todo = [s for s in STEPS if st.get(s["id"]) == "todo" and not s.get("up") and 1 <= s["level"] <= reach]
+    st, n = status_map(state), level_of(state["answers"]) or 0
+    todo = [s for s in STEPS if st.get(s["id"]) == "todo" and not s.get("up") and 1 <= s["level"] <= n]
     return order(todo)[0] if todo else None
 
 
-STATE = {"covered": "Covered", "partly": "Partly covered", "open": "Open"}
-
-
 def cover_text(c):
-    if not c["total"]:
-        return "Nothing to do"
-    return f"{STATE[c['state']]} · {c['ok']} of {c['total']} {'guardrail' if c['total'] == 1 else 'guardrails'} in place"
+    return f"{c['ok']} of {c['total']} in place" if c["total"] else "Nothing to do"
 
 
 def fmt(m):
@@ -239,7 +202,7 @@ def ans_text(q, ans, a):
     if ans == "skip":
         return "Skipped"
     sel = ans if q.get("multi") else [ans]
-    return ", ".join(o["label"] for o in options_of(q, a) if o["value"] in sel) or "—"
+    return ", ".join(o["label"] for o in q["options"] if o["value"] in sel) or "—"
 
 
 def help_kinds(sid):
@@ -335,11 +298,11 @@ def status_line(state):
     v = visible(a)
     todo = [s for s in STEPS if st.get(s["id"]) == "todo"]
     q = current(a)
-    lv = level_no(placement(a)) if placed(a) else None
+    lv = level_of(a)
     c = cover(state) if lv else None
     parts = [f"Questions {len([x for x in v if x['id'] in a])}/{len(v)}",
              f"level {lv} ({LEVELS[lv - 1]['name']})" if lv else None,
-             f"{c['covered']} of {len(c['levels'])} levels covered" if c else None,
+             f"{c['ok']} of {c['total']} guardrails in place" if c else None,
              f"plan: {len(todo)} to do, {list(st.values()).count('done')} in place"]
     if q:
         nxt = f"ask the user, then {SCRIPT} answer {q['id']} <choice>"
@@ -353,8 +316,8 @@ def status_line(state):
 
 def show_question(q, state):
     a, v = state["answers"], visible(state["answers"])
-    opts = options_of(q, a)
-    where = f"Level {q['covers']} · {LEVELS[q['covers'] - 1]['name']}" if q.get("covers") else PARTS[q["part"]]
+    opts = q["options"]
+    where = f"Guardrails for level {q['covers']} · {LEVELS[q['covers'] - 1]['name']}" if q.get("covers") else PARTS[q["part"]]
     print(f"Question {v.index(q) + 1} of {len(v)} · {where}{' (optional)' if q['part'] in OPTIONAL else ''} · id: {q['id']}")
     print(q["text"])
     if q.get("hint"):
@@ -372,19 +335,17 @@ def show_question(q, state):
 def cmd_level(state, args):
     a, st = state["answers"], status_map(state)
     if not placed(a):
-        print(f"Not placed yet. The first questions do that: {SCRIPT} next")
+        print(f"No level yet. The first question sets it: {SCRIPT} next")
         print(status_line(state))
         return
-    p = placement(a)
-    n = level_no(p)
+    n = level_of(a)
     c = cover(state)
-    tried = f" and have tried level {p['reach']}" if p["reach"] > n else ""
-    print(f"{c['covered']} of {len(c['levels'])} levels covered. You work at level {n} · {LEVELS[n - 1]['name']}{tried}.")
-    print("A level counts as covered when its essential guardrails are in place.")
+    print(f"{c['ok']} of your {c['total']} guardrails {'is' if c['ok'] == 1 else 'are'} in place. You go up to level {n} · {LEVELS[n - 1]['name']}.")
+    print("The guardrails are the essential steps of every level up to yours.")
     mark = lambda i: "[x]" if st.get(i) == "done" else "[ ]"
     for l in LEVELS:
-        mine = l["n"] <= p["reach"]
-        tag = "your level" if l["n"] == n else "tried" if mine and l["n"] > n else "next" if l["n"] == n + 1 else ""
+        mine = l["n"] <= n
+        tag = "your level" if l["n"] == n else "next" if l["n"] == n + 1 else ""
         head = f"\n{l['n']} · {l['name']}" + (f" ({tag})" if tag else "")
         if not mine:
             print(f"{head}: {l['line']}")
@@ -405,7 +366,7 @@ def cmd_level(state, args):
     its = [s for s in STEPS if s["level"] == 0 and st.get(s["id"])]
     if its:
         ca = cover_of(0, st)
-        print(f"\n{AROUND['name']}: {AROUND['risk']} ({ca['ok']} of {ca['total']} essentials in place)")
+        print(f"\n{AROUND['name']}: {AROUND['risk']} ({cover_text(ca)})")
         for s in order(its):
             print(f"  {mark(s['id'])} {s['id']:<24} {s['title']}" + (" · essential" if s["tier"] == 1 else ""))
     f = first_step(state)
@@ -432,7 +393,7 @@ def cmd_next(state, args):
 
 
 def parse_choice(q, raw, a):
-    opts = options_of(q, a)
+    opts = q["options"]
     if raw.strip().lower() == "skip":
         return "skip"
     picks = [p for p in re.split(r"[,\s]+", raw.strip()) if p]
@@ -466,26 +427,15 @@ def cmd_answer(state, args):
     if not q or q not in visible(a):
         sys.exit(f"'{args[0]}' isn't an open question. Open: {', '.join(x['id'] for x in visible(a))}")
     a[q["id"]] = parse_choice(q, " ".join(args[1:]), a)
-    # drop answers that named an option this answer has removed ("above")
-    for x in QUESTIONS:
-        if x.get("above") == q["id"] and x["id"] in a and a[x["id"]] != "skip":
-            ok = {o["value"] for o in options_of(x, a)}
-            kept = [v for v in (a[x["id"]] if isinstance(a[x["id"]], list) else [a[x["id"]]]) if v in ok]
-            if not kept:
-                del a[x["id"]]
-            else:
-                a[x["id"]] = kept if x.get("multi") else kept[0]
     save(state)
     st = status_map(state)
     print(f"Recorded · {q['label']}: {ans_text(q, a[q['id']], a)}")
     sel = a[q["id"]] if q.get("multi") else [a[q["id"]]]
     notes = list(dict.fromkeys(o["note"] + (f" (source: {SOURCE[o['src']]['url']})" if o.get("src") else "")
-                               for o in options_of(q, a) if o["value"] in sel and o.get("note")))
-    if q.get("place") and a[q["id"]] != "skip" and placed(a):
-        p = placement(a)
-        n = level_no(p)
-        tried = f" You've tried level {p['reach']}, so its guardrails count too." if p["reach"] > n else ""
-        print(f"Level {n} · {LEVELS[n - 1]['name']}. {LEVELS[n - 1]['line']}{tried}")
+                               for o in q["options"] if o["value"] in sel and o.get("note")))
+    if q.get("place") and placed(a):
+        n = level_of(a)
+        print(f"You go up to level {n} · {LEVELS[n - 1]['name']}. The next questions check the guardrails for " + (f"levels 1 to {n}." if n > 1 else "it."))
     elif a[q["id"]] != "skip" and not q.get("place"):
         add, done = effects_of(q, a[q["id"]], a)
         add = [i for i in dict.fromkeys(add) if st.get(i) == "todo"]
@@ -497,7 +447,7 @@ def cmd_answer(state, args):
         for n in notes:
             print(n)
         if q.get("covers") and not any(x.get("covers") == q["covers"] and x["id"] not in a for x in visible(a)):
-            print(f"Level {q['covers']} · {LEVELS[q['covers'] - 1]['name']}: {cover_text(cover_of(q['covers'], st)).lower()}")
+            print(f"Level {q['covers']} · {LEVELS[q['covers'] - 1]['name']}: {cover_text(cover_of(q['covers'], st))}")
     print()
     cmd_next(state, [])
 
@@ -527,7 +477,7 @@ def cmd_plan(state, args):
         items = order([s for s in todo if s["level"] == lv])
         if not items:
             continue
-        print(f"\n{name.upper()}" + (f" · {cover_text(cover_of(lv, st)).lower()}" if lv and lv <= placement(state["answers"])["reach"] else ""))
+        print(f"\n{name.upper()}" + (f" · {cover_text(cover_of(lv, st))}" if lv and lv <= (level_of(state["answers"]) or 0) else ""))
         for s in items:
             tags = [effort(s)] + (["essential"] if s["tier"] == 1 else []) + (["level up"] if s.get("up") else []) + (["with others"] if s.get("withOthers") else [])
             print(f"  [ ] {s['id']:<24} {s['title']} · {' · '.join(tags)} · help: {'/'.join(help_kinds(s['id']))}")

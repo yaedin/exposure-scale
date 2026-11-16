@@ -16,7 +16,7 @@ const missing=[];const need=(what,s)=>{if(!p.includes(s))missing.push(`${what}: 
 content.levels.forEach(l=>{need('level',`${l.n} ${l.name}:`);[...l.guards,...l.climb].forEach(id=>need(`level ${l.n} step`,id))});
 need('around',content.around.risk);
 content.questions.forEach(q=>{need('question',`${q.id}: ${q.text}`);(q.options||[]).forEach(o=>need(`option of ${q.id}`,o.label))});
-content.questions.find(q=>q.place==='habit')||missing.push('no level question');
+content.questions.filter(q=>q.place).length===1||missing.push('exactly one level question');
 content.steps.forEach(s=>{need('step',`${s.id}: ${s.title}`);(s.links||[]).forEach(l=>need(`link of ${s.id}`,l.url));
   if(s.tier===1)need('essential mark',`${s.id}: ${s.title} · ${s.minutes} min · impact ${s.impact} · essential`)});
 ['ai','aiLines','copied'].forEach(k=>{if(!content.intro[k])missing.push(`content.json intro.${k}`)});

@@ -1,11 +1,10 @@
 {
   "linksChecked": "2026-11-16",
   "intro": {"title": "See whether your guardrails keep up with how you use AI",
-    "line": "Pick your level on a five-level scale, then answer a few questions about what you do at each level. You see which levels are covered, which are open and what to fix first. It takes about three minutes, and your answers stay in this browser.",
+    "line": "Say how far you go with AI on a five-level scale, then answer a few questions about what you do at each level. You see which guardrails are in place, which are missing and what to fix first. It takes about three minutes, and your answers stay in this browser.",
     "ai": "Use your AI",
-    "aiLines": ["It asks how far you go with AI in most weeks.", "It looks through your memory and past chats for how you work, and shows what it found.", "It shows which levels are covered, which are open and what to fix first."],
+    "aiLines": ["It asks how far you went with AI in the last month.", "It looks through your memory and past chats for how you work, and shows what it found.", "It shows which guardrails are in place, which are missing and what to fix first."],
     "copied": "Prompt copied. If it isn’t in the chat yet, paste it and send.",
-    "by": "Made by one person, with AI. Every number on this page links to its source.",
     "basis": "The levels follow how much you lead and how much the AI does, as in research on AI autonomy. Risk grows with what you hand over. Which guardrail belongs to which level is my reading of the evidence, not a measurement. I tested the first version with about ten people. Most of them guessed their level right, so this version asks about the guardrails instead."},
 
   "around": {"name": "Around you", "line": "What other people’s AI can do to you, whatever your level", "risk": "Other people’s AI can copy your voice and face, learn from what you post and decide things about you."},
@@ -203,21 +202,12 @@
   ],
 
   "questions": [
-    {"id": "weekly", "part": "level", "label": "Most weeks", "text": "How far do you go with AI in most weeks?", "hint": "Pick the furthest one that is a habit, not something you tried once.", "place": "habit", "options": [
-      {"value": "1", "label": "I ask it questions", "detail": "A fact, an explanation, a translation. Or I barely use it.", "level": 1},
-      {"value": "2", "label": "I work through tasks with it", "detail": "A draft, a plan, an analysis, back and forth. I make each call.", "level": 2},
-      {"value": "3", "label": "I hand over whole pieces of work", "detail": "A report, code, slides. I use what comes back with light edits.", "level": 3},
-      {"value": "4", "label": "It works inside my accounts or on a schedule", "detail": "Email, calendar, files, or tasks that run without me starting them.", "level": 4},
-      {"value": "5", "label": "It acts for me without my checking each step", "detail": "It sends, books, buys or changes files and code. I check results.", "level": 5}
-    ]},
-    {"id": "tried", "part": "level", "label": "Last month", "text": "Have you gone further than that in the last month, even once?", "hint": "Pick all that apply. What you tried counts, because its risks start the first time.", "multi": true, "place": "tried", "above": "weekly",
-     "showIf": {"question": "weekly", "notEquals": "5"}, "options": [
-      {"value": "worked", "label": "Worked on something with it, back and forth", "detail": "A draft, a plan, an analysis you shaped", "level": 2},
-      {"value": "handed", "label": "Handed over a whole task and used the result", "detail": "A report, code, slides, with light edits", "level": 3},
-      {"value": "connected", "label": "Let it into my email, calendar or files", "level": 4},
-      {"value": "scheduled", "label": "Set it to run on a schedule or trigger", "level": 4},
-      {"value": "acted", "label": "Let it act without checking each step", "detail": "Send, book, buy, change files or code", "level": 5},
-      {"value": "none", "label": "No, nothing further", "exclusive": true, "level": 0}
+    {"id": "furthest", "part": "level", "label": "How far you go", "text": "How far did you go with AI in the last month?", "hint": "Pick the furthest one, even if you did it only once. Its risks start the first time.", "place": true, "options": [
+      {"value": "1", "label": "I asked it questions", "detail": "A fact, an explanation, a translation. Or I barely used it.", "level": 1},
+      {"value": "2", "label": "I worked through a task with it", "detail": "A draft, a plan, an analysis, back and forth. I made each call.", "level": 2},
+      {"value": "3", "label": "I handed over a whole piece of work", "detail": "A report, code, slides. I used what came back with light edits.", "level": 3},
+      {"value": "4", "label": "It worked inside my accounts or on a schedule", "detail": "Email, calendar, files, or a task that ran without me starting it.", "level": 4},
+      {"value": "5", "label": "It acted for me without my checking each step", "detail": "It sent, booked, bought or changed files or code. I checked the result.", "level": 5}
     ]},
     {"id": "ai_assistants", "part": "risks", "covers": 1, "label": "Assistants", "text": "Which AI assistants do you use?", "hint": "Pick all that apply.", "multi": true,
      "showIf": {"minLevel": 1}, "options": [

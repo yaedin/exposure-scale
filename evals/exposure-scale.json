@@ -4,12 +4,9 @@
     "skills": [
       "exposure-scale"
     ],
-    "query": "Run an Exposure Scale check for me. Don't run the computer check. My answers, in order: Most weeks I work through tasks with it, back and forth. Last month I also handed over a whole report once. I use ChatGPT only. Private things go into a normal chat. When it says my plan is good I usually take the yes. I sometimes work out my own view first. I use it for work with my own account. When it hands me finished work I read it through. I can't remember when I last did the core of my work without AI. Skip the optional questions. Then show me where I stand and what to do first.",
+    "query": "Run an Exposure Scale check for me. Don't run the computer check. My answers, in order: The furthest I went last month was handing over a whole report once. I use ChatGPT only. Private things go into a normal chat. When it says my plan is good I usually take the yes. I sometimes work out my own view first. I use it for work with my own account. When it hands me finished work I read it through. I can't remember when I last did the core of my work without AI. Skip the optional questions. Then show me where I stand and what to do first.",
     "expected_state": {
-      "weekly": "2",
-      "tried": [
-        "handed"
-      ],
+      "furthest": "3",
       "ai_assistants": [
         "chatgpt"
       ],
@@ -24,8 +21,8 @@
       "Uses scripts/exposure.py for every question, the result and the plan; does not invent questions or steps",
       "Records exactly the answers in expected_state (checked in state.json) and leaves the optional questions unanswered",
       "Does not run detect",
-      "Says the user works at level 2 (Work with) and has tried level 3, so three levels count",
-      "Runs `level` and says that none of the three levels is covered yet",
+      "Says the user goes up to level 3 (Delegate), so the guardrails of levels 1 to 3 count",
+      "Runs `level` and says that none of the user's guardrails is in place yet",
       "Names the step to do first: Check facts, numbers and quotes before it goes out",
       "Keeps the source links the script prints next to numbers"
     ]
