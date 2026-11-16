@@ -4,301 +4,199 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Exposure Scale</title>
-<meta name="description" content="Where you stand with AI on a five-level scale, how to move up, and the risks that come with each level.">
+<meta name="description" content="See whether your guardrails keep up with how you use AI: five levels, the ones you have covered, the ones still open and what to fix first.">
 <script>/* apply a saved theme before the page paints */try{const t=localStorage.getItem('exposure-scale-theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}</script>
 <link rel="preload" href="fonts/ibm-plex-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="fonts/bricolage-grotesque-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/ibm-plex-sans-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
 <style>
-@font-face{font-family:"Bricolage Grotesque";font-style:normal;font-weight:200 800;font-display:swap;src:url(fonts/bricolage-grotesque-latin-wght-normal.woff2) format("woff2")}
 @font-face{font-family:"IBM Plex Sans";font-style:normal;font-weight:400;font-display:swap;src:url(fonts/ibm-plex-sans-latin-400-normal.woff2) format("woff2")}
 @font-face{font-family:"IBM Plex Sans";font-style:normal;font-weight:500;font-display:swap;src:url(fonts/ibm-plex-sans-latin-500-normal.woff2) format("woff2")}
 @font-face{font-family:"IBM Plex Sans";font-style:normal;font-weight:600;font-display:swap;src:url(fonts/ibm-plex-sans-latin-600-normal.woff2) format("woff2")}
 html{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 body{margin:0}
-img{max-width:100%}
 [hidden]{display:none!important}
 
-/* Layout: tabbed instrument. Check = one question at a time with a live tally beside it; Level = the five-level ladder, next level and risks; Plan = effort lanes; All steps = catalog by level. */
+/* Layout: one guided flow, no tabs. Start → one question per screen → the result: a statement and the first step
+   on the left, the five levels as a rail on the right (one open at a time). Design follows the owner's personal site:
+   plain ground, one sans-serif, brown lines, a green wash for what is covered or chosen. */
 :root{
-  --bg:#EDF0EE; --surface:#FFFFFF; --ink:#141C19; --muted:#5A6863; --line:#D3DBD7; --chip:#E4EAE7;
-  --done:#1D7A57; --done-bg:#DDF0E6; --todo:#A86A05; --todo-bg:#F9EDD4;
-  --f-display:"Bricolage Grotesque","IBM Plex Sans",system-ui,sans-serif;
+  /* color: ground, three text shades, one hairline, one accent for everything you can act on, one wash */
+  --bg:#FFFFFF; --ink:#111111; --text:#3D3D3D; --muted:#5F5F5F; --line:#E2E2E2;
+  --accent:#6B3A1E; --wash:#E3EED5;
   --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
-  /* type: two families, weights 400/500/600, six sizes, one tracking for headings */
-  --t-xs:.8125rem; --t-sm:.875rem; --t-md:1rem; --t-lg:1.125rem; --t-xl:clamp(1.5rem,3.6vw,2rem); --t-2xl:clamp(2.25rem,6vw,3.25rem);
-  --tight:-.015em;
-  /* shape: four radii, four sizes (control, tag, label, icon) */
-  --r-bar:3px; --r-sm:7px; --r-md:10px; --r-lg:12px;
-  --h-ctl:40px; --h-tag:28px; --h-label:22px; --h-icon:18px;
+  /* type: one family, weights 400/500/600, six sizes, one tracking for headings */
+  --t-xs:.875rem; --t-sm:1rem; --t-md:1.125rem; --t-lg:1.3125rem; --t-xl:clamp(1.625rem,4vw,2rem); --t-2xl:clamp(2rem,5.2vw,2.75rem);
+  --tight:-.02em;
+  /* shape: two radii, one line weight, four sizes (control, rail node, marker, icon) */
+  --r-bar:3px; --r-ctl:6px; --w-line:1.5px;
+  --h-ctl:46px; --h-node:48px; --h-mark:28px; --h-icon:20px;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#0F1513; --surface:#161E1B; --ink:#E4EBE7; --muted:#93A19B; --line:#28332F; --chip:#212B27;
-  --done:#4DBF8E; --done-bg:#183329; --todo:#E9B04A; --todo-bg:#33280F; color-scheme:dark}}
+  --bg:#151412; --ink:#F2EFEA; --text:#D2CDC5; --muted:#A8A29A; --line:#34312D;
+  --accent:#D9A27E; --wash:#2F3D26; color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#0F1513; --surface:#161E1B; --ink:#E4EBE7; --muted:#93A19B; --line:#28332F; --chip:#212B27;
-  --done:#4DBF8E; --done-bg:#183329; --todo:#E9B04A; --todo-bg:#33280F; color-scheme:dark}
+  --bg:#151412; --ink:#F2EFEA; --text:#D2CDC5; --muted:#A8A29A; --line:#34312D;
+  --accent:#D9A27E; --wash:#2F3D26; color-scheme:dark}
 
 *{box-sizing:border-box}
-body{background:var(--bg);color:var(--ink);font:var(--t-md)/1.5 var(--f-body);-webkit-font-smoothing:antialiased}
-button,input{font:inherit;color:inherit}
-button{background:none;border:0;cursor:pointer;text-align:left;-webkit-tap-highlight-color:transparent}
-button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-radius:var(--r-md)}
-a{color:inherit}
+body{background:var(--bg);color:var(--ink);font:var(--t-md)/1.55 var(--f-body);-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-align:left;-webkit-tap-highlight-color:transparent}
+button:focus-visible,a:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:var(--r-ctl)}
+a{color:var(--accent);text-underline-offset:3px}
 b,strong{font-weight:600}
+p{margin:0}
 .num{font-variant-numeric:tabular-nums}
-.label{font:500 var(--t-xs)/1.2 var(--f-body);color:var(--muted)}
+.label{font-size:var(--t-xs);font-weight:500;color:var(--muted)}
 
-.wrap{max-width:1080px;margin:0 auto;padding-block:22px 80px;
-  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
-header{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:14px 8px;margin-bottom:28px}
-/* small screens: title and theme on one row, tabs below */
-@media (max-width:620px){header{grid-template-columns:minmax(0,1fr) auto}header .tabs{grid-column:1/-1;order:3;justify-self:start}}
-h1{font:600 var(--t-lg)/1 var(--f-display);letter-spacing:var(--tight);margin:0}
-.theme{width:var(--h-ctl);height:var(--h-ctl);display:grid;place-items:center;border-radius:var(--r-md);background:var(--chip);color:var(--muted)}
+/* the wash: a hand-painted fill behind whatever is covered or chosen. The filter roughens its edge. */
+.wash{position:relative;isolation:isolate}
+.wash::before{content:"";position:absolute;top:1px;left:1px;right:-1px;bottom:-1px;border-radius:inherit;background:var(--wash);filter:url(#wash);z-index:-1}
+
+.wrap{max-width:1120px;margin:0 auto;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;
+  padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px))}
+header{display:flex;justify-content:space-between;align-items:center;padding:16px 0}
+.brand{color:var(--ink);text-decoration:none;font-weight:500}
+.theme{width:var(--h-ctl);height:var(--h-ctl);display:grid;place-items:center;border-radius:var(--r-ctl);color:var(--muted);margin-right:-12px}
 .theme:hover{color:var(--ink)}
 .theme svg{width:var(--h-icon);height:var(--h-icon)}
-.tabs{display:flex;gap:2px;height:var(--h-ctl);background:var(--chip);padding:3px;border-radius:var(--r-md)}
-.tabs button{display:inline-flex;align-items:center;padding:0 14px;border-radius:var(--r-sm);font-size:var(--t-sm);font-weight:500;color:var(--muted);text-align:center}
-.tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgb(0 0 0 / .08)}
-.tabs .c{font-variant-numeric:tabular-nums;font:400 var(--t-xs) var(--f-body);margin-left:5px;opacity:.75}
+main{flex:1 1 auto;padding:clamp(24px,7vw,88px) 0 96px}
+h1{font-size:var(--t-2xl);line-height:1.12;font-weight:500;letter-spacing:var(--tight);margin:0;text-wrap:balance}
+h2{font-size:var(--t-lg);line-height:1.3;font-weight:500;margin:0}
 
-/* ---------- check ---------- */
-.check{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,300px);gap:40px;align-items:start}
-@media (max-width:860px){.check{grid-template-columns:minmax(0,1fr);gap:32px}}
-.stage{max-width:600px;display:grid;gap:18px}
-.prog{display:flex;align-items:center;gap:12px;font-size:var(--t-sm);color:var(--muted)}
+/* two columns on wide screens, as on the personal site: the statement left, the rail right */
+.cols{display:flex;flex-wrap:wrap;gap:clamp(40px,7vw,80px);align-items:flex-start}
+.lead{flex:1 1 360px;min-width:0;display:grid;gap:18px}
+.side{flex:1 1 460px;min-width:0;display:grid;gap:32px}
+@media (min-width:980px){.lead.stick{position:sticky;top:24px}}
+.lede{color:var(--text);max-width:34rem;text-wrap:pretty}
+
+/* controls */
+.btn{min-height:var(--h-ctl);display:inline-flex;align-items:center;justify-content:center;padding:0 18px;border:var(--w-line) solid var(--accent);border-radius:var(--r-ctl);color:var(--accent);font-size:var(--t-sm);font-weight:500;text-align:center;text-decoration:none}
+.btn[disabled]{opacity:.4;cursor:default}
+.link{min-height:var(--h-ctl);display:inline-flex;align-items:center;color:var(--accent);font-size:var(--t-sm);text-decoration:underline;text-underline-offset:3px}
+.acts{display:flex;gap:6px 24px;align-items:center;flex-wrap:wrap}
+.keys{margin-left:auto;font-size:var(--t-xs);color:var(--muted)}
+.confirm{display:flex;gap:6px 24px;align-items:center;flex-wrap:wrap;font-size:var(--t-sm)}
+
+/* ---------- questions ---------- */
+.stage{max-width:620px;display:grid;gap:24px}
+.prog{display:flex;align-items:center;gap:14px;font-size:var(--t-xs);color:var(--muted)}
 /* one segment per question: answered, skipped, where you are, still open */
-.prog .segs{flex:1;display:flex;gap:2px;height:6px;min-width:0}
-.segs i{flex:1;border-radius:var(--r-bar);background:var(--chip);transition:background .2s}
+.segs{flex:1;display:flex;gap:3px;height:4px;min-width:0}
+.segs i{flex:1;border-radius:var(--r-bar);background:var(--line);transition:background .2s}
 .segs i.ok{background:var(--ink)}
-.segs i.sk{background:var(--line)}
-.segs i.cur{background:var(--todo)}
-.confirm{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:var(--t-sm)}
-.confirm>span{padding-left:12px}
-.confirm .yes{color:var(--todo)}
-
-.reply{display:grid;gap:4px;padding:12px 14px;border-radius:var(--r-lg);background:var(--surface);border:1px solid var(--line);font-size:var(--t-sm)}
-.reply .you{color:var(--muted);font-size:var(--t-sm)}
-.reply .eff{display:flex;gap:6px;flex-wrap:wrap;margin-top:2px}
-.pill{font:500 var(--t-xs)/1 var(--f-body);height:var(--h-label);display:inline-flex;align-items:center;padding:0 7px;border-radius:var(--r-sm);background:var(--chip);color:var(--muted);white-space:nowrap}
-.pill.add{background:var(--todo-bg);color:var(--todo)}
-.pill.ok{background:var(--done-bg);color:var(--done)}
-
-.q{display:grid;gap:16px;animation:in .22s ease-out both}
+.segs i.sk{background:var(--muted)}
+.segs i.cur{background:var(--accent)}
+.reply{display:grid;gap:4px;padding-bottom:20px;border-bottom:1px solid var(--line);font-size:var(--t-sm);color:var(--text)}
+.reply .you{font-size:var(--t-xs);color:var(--muted)}
+.q{display:grid;gap:20px;animation:in .22s ease-out both}
 /* a short slide, no fade: fading from zero blanked the screen on every answer */
 @keyframes in{from{transform:translateY(6px)}to{transform:none}}
 .q.still{animation:none}
-.q h2{font:600 var(--t-xl)/1.15 var(--f-display);letter-spacing:var(--tight);margin:0;text-wrap:balance}
-.q .hint{color:var(--muted);margin:-8px 0 0;font-size:var(--t-sm)}
-.opts{display:grid;gap:8px}
-.opt{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;padding:13px 14px;border-radius:var(--r-lg);background:var(--surface);border:1px solid var(--line);transition:border-color .15s,transform .1s}
-.opt:hover{border-color:var(--muted)}
-.opt:active{transform:scale(.995)}
-.opt .k{font:500 var(--t-xs)/1 var(--f-body);width:var(--h-label);height:var(--h-label);display:grid;place-items:center;border-radius:var(--r-sm);background:var(--chip);color:var(--muted)}
-.opt .l{font-weight:500}
-.opt .s{display:block;font-size:var(--t-sm);color:var(--muted);font-weight:400}
-.opt .box{width:var(--h-icon);height:var(--h-icon);border-radius:var(--r-sm);border:1.5px solid var(--line)}
-.opt[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
-.opt[aria-pressed="true"] .box{background:var(--ink);border-color:var(--ink);box-shadow:inset 0 0 0 3px var(--surface)}
-.qfoot{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.btn{height:var(--h-ctl);display:inline-flex;align-items:center;justify-content:center;padding:0 16px;border-radius:var(--r-md);background:var(--ink);color:var(--bg);font-weight:500;text-align:center}
-.btn[disabled]{opacity:.35;cursor:default}
-.ghost{height:var(--h-ctl);display:inline-flex;align-items:center;justify-content:center;padding:0 12px;border-radius:var(--r-md);color:var(--muted);font-size:var(--t-sm)}
-.ghost:hover{color:var(--ink);background:var(--chip)}
-.keys{margin-left:auto;font-size:var(--t-xs);color:var(--muted)}
+.stage h1{font-size:var(--t-xl);line-height:1.18}
+.hint{color:var(--text);margin-top:-10px}
+.opts{display:grid}
+.opt{display:grid;grid-template-columns:var(--h-mark) minmax(0,1fr);gap:14px;align-items:start;min-height:var(--h-node);padding:10px 0;width:100%}
+.mk{width:var(--h-mark);height:var(--h-mark);border-radius:50%;border:var(--w-line) solid var(--accent);display:grid;place-items:center;font-size:var(--t-xs);font-weight:500;color:var(--accent)}
+.mk svg,.tick svg{width:var(--h-icon);height:var(--h-icon);fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.opt .l{display:grid;font-weight:500;padding-top:1px}
+.opt .s{font-weight:400;font-size:var(--t-sm);color:var(--text)}
+.opt:hover .t{text-decoration:underline;text-decoration-color:var(--accent);text-underline-offset:3px}
 @media (max-width:620px){.keys{display:none}
   /* multi-choice: keep Continue in reach while scrolling the options */
-  .q.multi .qfoot{position:sticky;bottom:0;z-index:1;background:var(--bg);border-top:1px solid var(--line);margin:0 -16px;padding:12px 16px max(12px,env(safe-area-inset-bottom))}}
+  .q.multi .acts{position:sticky;bottom:0;z-index:1;background:var(--bg);border-top:1px solid var(--line);margin:0 -20px;padding:10px 20px max(10px,env(safe-area-inset-bottom))}}
 
-.fin h2{font:600 var(--t-xl)/1.15 var(--f-display);margin:0;letter-spacing:var(--tight)}
-.fin p{margin:0;color:var(--muted)}
-.fin p a{color:var(--ink)}
-.startscr{max-width:640px;padding-block:clamp(8px,4vw,40px)}
-.start{gap:20px}
-.start h2{font-size:var(--t-2xl);line-height:1.08}
-/* the five levels as a scale: each step a shade darker */
-.preview{list-style:none;margin:4px 0 0;padding:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
-.preview li{display:grid;gap:8px;align-content:start;padding-top:10px;border-top:6px solid color-mix(in srgb,var(--ink) calc(var(--k)*18%),var(--chip));font-size:var(--t-sm);font-weight:500;line-height:1.25}
-.preview .pn{color:var(--muted);font-size:var(--t-xs)}
-.lede{margin:0;font-size:var(--t-md);color:var(--muted);max-width:52ch;text-wrap:pretty}
-.useai{display:grid;gap:12px;padding-top:20px;border-top:1px solid var(--line)}
-.useai .hint{margin:0;max-width:52ch}
-.ailines{margin:0;padding-left:20px;display:grid;gap:4px;max-width:52ch}
-.useai .textbtn{padding:0}
-.promptbox{max-height:320px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;padding:12px 14px;border-radius:var(--r-lg);background:var(--surface);border:1px solid var(--line);font-size:var(--t-xs);line-height:1.5}
-.chats{display:flex;flex-wrap:wrap;gap:8px}
-.chatbtn{height:var(--h-ctl);display:inline-flex;align-items:center;padding:0 14px;border-radius:var(--r-md);border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:var(--t-sm);font-weight:500;text-decoration:none}
-.chatbtn:hover{border-color:var(--muted)}
+/* "Use your AI" panel on the start screen */
+.useai{display:grid;gap:14px;padding-top:20px;border-top:1px solid var(--line);font-size:var(--t-sm);color:var(--text)}
+.useai ul{margin:0;padding-left:20px;display:grid;gap:4px}
+.promptbox{max-height:320px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;padding:12px 14px;border-radius:var(--r-ctl);border:1px solid var(--line);font-size:var(--t-xs);line-height:1.5}
 .useai .copied:empty{display:none}
 
-.side{display:grid;gap:22px;position:sticky;top:calc(env(safe-area-inset-top,0px) + 20px)}
-@media (max-width:860px){.side{position:static}}
-.tally{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:16px;display:grid;gap:12px}
-.lane-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;align-items:baseline}
-.lane-row b{font-weight:500}
-.lane-row .v{font-variant-numeric:tabular-nums;font:500 var(--t-sm) var(--f-body);font-variant-numeric:tabular-nums}
-.lane-row .d{grid-column:1/-1;font-size:var(--t-xs);color:var(--muted)}
-.dots{display:flex;gap:3px;flex-wrap:wrap;grid-column:1/-1;margin-top:4px}
-.dots i{width:9px;height:9px;border-radius:var(--r-bar);background:var(--todo-bg);border:1px solid var(--todo)}
-.dots i.ok{background:var(--done-bg);border-color:var(--done)}
-.answers{display:grid;gap:2px}
-.answers button{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;padding:7px 8px;border-radius:var(--r-md);font-size:var(--t-sm)}
-.answers button:hover{background:var(--chip)}
-.answers .a{color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;grid-column:1/-1;font-size:var(--t-xs);margin-top:-2px}
-
-/* ---------- plan ---------- */
-.plan{display:grid;gap:28px}
-.gauge{display:grid;gap:10px}
-.gauge .big{font:600 var(--t-2xl)/1 var(--f-display);letter-spacing:var(--tight)}
-.gauge .big small{font-size:var(--t-lg);font-weight:600;color:var(--muted);letter-spacing:0;margin-left:6px}
-.gauge p{margin:0;color:var(--muted)}
-.gbar{display:flex;height:10px;border-radius:var(--r-bar);overflow:hidden;background:var(--chip);max-width:560px}
-.gbar i{background:var(--done)}.gbar b{background:var(--todo)}
-.lanes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;align-items:start}
-@media (max-width:860px){.lanes{grid-template-columns:minmax(0,1fr)}}
-.lane{display:grid;gap:8px}
-.lane h3{font:600 var(--t-lg)/1.2 var(--f-display);margin:0}
-.lane .sum{font-size:var(--t-sm);color:var(--muted);margin-top:-4px}
-.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:12px;display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 10px}
-.card.is-done{opacity:.6}
-.card.is-done .ct{text-decoration:line-through}
-.tick{width:var(--h-label);height:var(--h-label);border-radius:var(--r-sm);border:1.5px solid var(--line);display:grid;place-items:center;margin-top:1px}
-.tick[aria-pressed="true"]{background:var(--done);border-color:var(--done);color:var(--surface)}
-.tick[aria-pressed="true"]::after{content:"✓";font-size:var(--t-xs);font-weight:600}
-.ct{font-weight:500;line-height:1.35;padding:0}
-.meta{grid-column:2;display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:var(--t-xs);color:var(--muted)}
-.imp{display:inline-flex;gap:2px}.imp i{width:6px;height:6px;border-radius:50%;background:var(--line)}.imp i.on{background:var(--ink)}
-.more{grid-column:2;display:grid;gap:8px;font-size:var(--t-sm);padding-top:4px}
-.links{display:flex;gap:6px;flex-wrap:wrap}
-.go{display:inline-flex;align-items:center;gap:5px;height:var(--h-tag);padding:0 10px;border-radius:var(--r-sm);background:var(--chip);text-decoration:none;font-size:var(--t-sm);font-weight:500}
-.go::after{content:"↗";font-size:var(--t-xs);color:var(--muted)}
-.go:hover{background:var(--ink);color:var(--bg)}
-.ag{font:500 var(--t-xs)/1 var(--f-body);height:var(--h-label);display:inline-flex;align-items:center;padding:0 6px;border-radius:var(--r-sm);border:1px solid var(--line)}
-.ah{margin:0;color:var(--muted)}
-.ah a{color:var(--ink)}
-.textbtn{padding:0 4px;font-size:var(--t-xs);color:var(--muted);text-decoration:underline}
-.textbtn:hover{color:var(--ink)}
-.inplace summary{cursor:pointer;color:var(--muted);font-size:var(--t-sm)}
-.inplace ul{margin:10px 0 0;padding-left:18px;color:var(--muted);font-size:var(--t-sm);columns:2;column-gap:28px}
-@media (max-width:620px){.inplace ul{columns:1}}
-.empty{display:grid;gap:12px;justify-items:start;padding:28px;border:1px dashed var(--line);border-radius:var(--r-lg);max-width:560px}
-.empty p{margin:0;color:var(--muted)}
-
-/* ---------- level ---------- */
-.lvbox{text-align:left;gap:8px}
-.lvbox:hover{border-color:var(--muted)}
-.lv{display:flex;align-items:baseline;gap:8px}
-.lv .n{font:600 var(--t-xl)/1 var(--f-display)}
-.lv b{font:600 var(--t-lg)/1.2 var(--f-display)}
-.seg{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:3px}
-.seg i{height:7px;border-radius:var(--r-bar);background:var(--chip)}
-.seg i.on{background:var(--ink)}
-.seg i.tr{background:var(--line)}
-.go-lv{cursor:pointer;color:var(--ink)}
-.go-lv::after{content:" →"}
-.lvlink{padding:0;justify-self:start}
-.lvlink:hover{color:var(--ink)}
-.tg{font:500 var(--t-xs)/1 var(--f-body);height:var(--h-label);display:inline-flex;align-items:center;padding:0 6px;border-radius:var(--r-sm);background:var(--chip);color:var(--muted);white-space:nowrap}
-.tg.you{background:var(--ink);color:var(--bg)}
-.tg.nx{background:var(--todo-bg);color:var(--todo)}
-/* result: the scale as the outline. One level open at a time; the rail links the levels */
-.result{display:grid;gap:20px;max-width:640px}
-.rhead{display:grid;gap:8px}
-.rhead h2{font:600 var(--t-2xl)/1.05 var(--f-display);letter-spacing:var(--tight);margin:0;text-wrap:balance}
-.rhead p{margin:0;color:var(--muted)}
-.climb{list-style:none;margin:0;padding:0;display:grid}
-.climb>li{display:grid;grid-template-columns:var(--h-ctl) minmax(0,1fr);column-gap:12px}
-.rail{display:flex;flex-direction:column;align-items:center}
-.node{width:var(--h-ctl);height:var(--h-ctl);flex:none;box-sizing:border-box;border-radius:var(--r-md);display:grid;place-items:center;font:600 var(--t-lg)/1 var(--f-display);background:var(--chip);color:var(--muted)}
-.rail i{flex:1;width:2px;min-height:12px;background:var(--line)}
-.climb>li:last-child .rail i{background:none}
-.climb .below .node,.climb .you .node{background:var(--ink);color:var(--bg)}
-.climb .you .node{box-shadow:0 0 0 3px var(--bg),0 0 0 5px var(--ink)}
-.climb .below .rail i{background:var(--ink)}
-.climb .next .node,.climb .tried .node{background:var(--surface);color:var(--ink);border:2px dashed var(--ink)}
-.lvc{min-width:0;padding-bottom:14px}
-.lvh{width:100%;min-height:var(--h-ctl);display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:10px;row-gap:2px;align-items:center;padding:6px 0 0}
-.lvh .t{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.lvh b{font:600 var(--t-lg)/1.2 var(--f-display)}
+/* ---------- the rail: five levels, one open at a time ---------- */
+.rail{list-style:none;margin:0;padding:0;display:grid}
+.rail>li{display:grid;grid-template-columns:var(--h-node) minmax(0,1fr);column-gap:20px}
+.rl{display:flex;flex-direction:column;align-items:center}
+.rl i{flex:1 1 auto;width:var(--w-line);min-height:20px;background:var(--line)}
+.rail>li:last-child .rl i{background:none}
+.node{width:var(--h-node);height:var(--h-node);flex:none;border-radius:50%;border:var(--w-line) solid var(--accent);display:grid;place-items:center;font-size:var(--t-lg);font-weight:500;color:var(--ink)}
+/* a level's state shows in its node: washed = covered, half washed = partly, dashed and empty = open, grey = not yours yet */
+.is-partly .node::before{clip-path:inset(50% -4px -4px -4px)}
+.is-open .node{border-style:dashed}
+.is-off .node{border-color:var(--line);color:var(--muted)}
+.lvc{min-width:0;padding-bottom:24px}
+.lvh{width:100%;min-height:var(--h-node);display:flex;flex-direction:column;justify-content:center}
 .lvh .m{font-size:var(--t-xs);color:var(--muted)}
-.lvh.off{grid-template-columns:minmax(0,1fr)}
-.lvh.off b{color:var(--muted)}
-.lvh .k,.lvbody .k{font-size:var(--t-xs);font-weight:500;color:var(--muted)}
-.chev{grid-column:2;grid-row:1/span 3;width:var(--h-icon);height:var(--h-icon);fill:none;stroke:var(--muted);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:transform .15s}
-.lvh[aria-expanded="true"] .chev{transform:rotate(180deg)}
-.lvbody{margin-top:8px;display:grid;gap:8px}
-.lvbody p{margin:0 0 4px;font-size:var(--t-sm);color:var(--ink)}
-.lvbody .k{margin-top:6px}
-.aroundbox{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:4px 14px 12px}
-.aroundbox .card{background:var(--bg)}
-.why{grid-column:2;margin:0;font-size:var(--t-xs);color:var(--muted)}
-.resfoot{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
-.resfoot>span{display:grid;gap:2px}
-.resfoot b{font:600 var(--t-xl)/1.1 var(--f-display);letter-spacing:var(--tight)}
-.resfoot>span>span{font-size:var(--t-xs);color:var(--muted)}
-.yours summary{cursor:pointer;color:var(--muted);font-size:var(--t-sm)}
-.yours .answers{margin-top:8px}
-.src summary{cursor:pointer;color:var(--muted);font-size:var(--t-sm)}
-.src p{margin:10px 0 6px;font-size:var(--t-sm);color:var(--muted);max-width:68ch}
-.src ul{margin:0;padding-left:18px;font-size:var(--t-sm);display:grid;gap:3px}
-.ag.up{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.lvh .m b{font-weight:500;color:var(--ink)}
+button.lvh:hover h2{text-decoration:underline;text-decoration-color:var(--accent);text-underline-offset:4px}
+.is-off h2{color:var(--muted)}
+.lvbody{display:grid;gap:14px;padding-top:10px;max-width:34rem;color:var(--text)}
+.lvbody .case{font-size:var(--t-sm)}
+.sub{font-size:var(--t-xs);font-weight:500;color:var(--muted);margin-bottom:-8px}
+.plain{margin:0;padding-left:20px;font-size:var(--t-sm)}
 
-/* ---------- all ---------- */
-.all{display:grid;gap:20px}
-.filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.filters input{height:var(--h-ctl);padding:0 12px;border-radius:var(--r-md);border:1px solid var(--line);background:var(--surface);min-width:0;flex:1 1 200px;max-width:280px}
-.fseg{display:flex;gap:2px;height:var(--h-ctl);background:var(--chip);padding:3px;border-radius:var(--r-md)}
-.fseg button{display:inline-flex;align-items:center;padding:0 10px;border-radius:var(--r-sm);font-size:var(--t-sm);color:var(--muted);text-align:center}
-.fseg button[aria-pressed="true"]{background:var(--surface);color:var(--ink)}
-.area{display:grid;gap:8px}
-.area h3{font:600 var(--t-lg)/1.2 var(--f-display);margin:0;display:flex;gap:10px;align-items:baseline}
-.area h3 .n{font-variant-numeric:tabular-nums;font:400 var(--t-xs) var(--f-body);color:var(--muted)}
-.rows{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden}
-.row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;align-items:center;padding:10px 12px;border-top:1px solid var(--line)}
-.row:first-child{border-top:0}
-.row .rt{display:grid;gap:2px;min-width:0;padding:0}
-.row .rt span:first-child{font-weight:500}
-.row .meta{grid-column:auto;padding:0}
-.row .more{grid-column:1/-1;padding-left:0}
-.st{font:500 var(--t-xs)/1 var(--f-body);height:var(--h-tag);display:inline-flex;align-items:center;padding:0 9px;border-radius:var(--r-sm);white-space:nowrap;border:1px solid var(--line);color:var(--muted)}
-.st.todo{background:var(--todo-bg);color:var(--todo);border-color:transparent}
-.st.done{background:var(--done-bg);color:var(--done);border-color:transparent}
-.nores{color:var(--muted)}
-@media (prefers-reduced-motion:reduce){.chev{transition:none}.q{animation:none}.segs i,.opt{transition:none}}
-footer{margin-top:64px;padding-top:18px;border-top:1px solid var(--line);display:grid;gap:6px;font-size:var(--t-sm);color:var(--muted);max-width:68ch}
-footer p{margin:0}
-footer a{color:var(--ink)}
+/* steps: a tick, the title, why it matters, time and links */
+.steps{list-style:none;margin:0;padding:0;display:grid;gap:14px}
+.step{display:grid;grid-template-columns:var(--h-mark) minmax(0,1fr);gap:14px;align-items:start}
+.tick{width:var(--h-mark);height:var(--h-mark);border-radius:50%;border:var(--w-line) solid var(--accent);display:grid;place-items:center;color:var(--accent)}
+.sb{display:grid;gap:2px;min-width:0}
+.st{font-weight:500;color:var(--ink);padding-top:1px}
+.is-done .st{color:var(--muted);font-weight:400}
+.sw,.sm,.links{font-size:var(--t-sm)}
+.sm{color:var(--muted);font-size:var(--t-xs)}
+.links{display:flex;gap:2px 18px;flex-wrap:wrap}
+.links a{min-height:var(--h-mark);display:inline-flex;align-items:center}
+
+/* the first step: the one thing to do next */
+.first{display:grid;gap:10px;padding-top:22px;border-top:1px solid var(--line);max-width:34rem}
+.first p{color:var(--text)}
+.first .acts{margin-top:6px}
+
+.around{display:grid;gap:10px;padding-top:28px;border-top:1px solid var(--line)}
+.around>p{color:var(--text);max-width:34rem}
+.tools{display:flex;gap:0 24px;flex-wrap:wrap;padding-top:16px;border-top:1px solid var(--line)}
+.answers{display:grid;font-size:var(--t-sm)}
+.answers button{display:grid;gap:0;padding:8px 0;border-top:1px solid var(--line);width:100%}
+.answers button:first-child{border-top:0}
+.answers .a{color:var(--text)}
+.answers .e{color:var(--accent);text-decoration:underline;text-underline-offset:3px;font-size:var(--t-xs)}
+.basis{display:grid;gap:12px;font-size:var(--t-sm);color:var(--text);max-width:34rem}
+.basis ul{margin:0;padding-left:20px;display:grid;gap:4px}
+.note{color:var(--text);max-width:34rem}
+
+@media (prefers-reduced-motion:reduce){.q{animation:none}.segs i{transition:none}}
+footer{padding:18px 0 32px;border-top:1px solid var(--line);display:grid;gap:6px;font-size:var(--t-xs);color:var(--muted);max-width:46rem}
 </style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="wash" x="-20%" y="-20%" width="140%" height="140%"><feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="3" seed="7" result="warp"/><feDisplacementMap in="SourceGraphic" in2="warp" scale="7" xChannelSelector="R" yChannelSelector="G" result="edge"/><feTurbulence type="fractalNoise" baseFrequency="0.6" numOctaves="2" seed="3" result="grain"/><feColorMatrix in="grain" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  -0.7 0 0 0 1.2" result="mottle"/><feComposite in="edge" in2="mottle" operator="in"/></filter></svg>
 
 <div class="wrap">
   <header>
-    <h1>Exposure Scale</h1>
-    <nav class="tabs" role="tablist" id="tabs"></nav>
+    <a class="brand" href="./">Exposure Scale</a>
     <button type="button" class="theme" id="theme"></button>
   </header>
-  <div id="view"></div>
+  <main id="view"></main>
   <footer>
-    <p><b>Privacy.</b> Your answers stay in this browser’s local storage. No accounts, cookies, analytics or tracking. The site is hosted on GitHub Pages, which may log your IP address (<a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement" target="_blank" rel="noopener">GitHub’s privacy statement</a>). Fonts are served from this site. If you run the check in an AI app, that app’s privacy terms apply.</p>
-    <p><b>Prototype.</b> General guidance, not professional advice. <span id="checked"></span> <a href="https://github.com/yaedin/exposure-scale" target="_blank" rel="noopener">Source and feedback</a>.</p>
+    <p id="by"></p>
+    <p>Your answers stay in this browser’s local storage. There are no accounts, cookies, analytics or trackers. The site is hosted on GitHub Pages, which may log your IP address (<a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement" target="_blank" rel="noopener">GitHub’s privacy statement</a>). If you run the check in an AI app, that app’s privacy terms apply.</p>
+    <p>This is a prototype and general guidance, not professional advice. <span id="checked"></span> <a href="https://github.com/yaedin/exposure-scale" target="_blank" rel="noopener">Source and feedback</a></p>
   </footer>
 </div>
 
 <script>
 /* ===== content: loaded from content.json ===== */
-let INTRO={},AROUND={},LEVELS=[],SOURCES=[],PARTS=[],STEPS=[],QUESTIONS=[],STEP_BY_ID={},QUESTION_BY_ID={};
+let INTRO={},AROUND={},LEVELS=[],SOURCES=[],PARTS=[],STEPS=[],QUESTIONS=[],STEP_BY_ID={},QUESTION_BY_ID={},SOURCE_BY_ID={},OPTIONAL={};
 
 /* ===== state ===== */
-const KEY='exposure-scale-v2';
-const TABS=['check','level','plan','all'];
-let S={a:{},ov:{},tab:'check',cur:null,last:null,open:{},f:{e:'all',q:''},started:false};
-try{const s=JSON.parse(localStorage.getItem(KEY)||'null');if(s)S={...S,a:s.a||{},ov:s.ov||{}}}catch(e){}
-const h=location.hash.slice(1);if(TABS.includes(h))S.tab=h;
-const save=()=>{try{localStorage.setItem(KEY,JSON.stringify({a:S.a,ov:S.ov}))}catch(e){}};
+// Saved: answers (a), ticks (ov) and whether the optional "Around you" questions were started (around).
+const KEY='exposure-scale-v3';
+let S={a:{},ov:{},around:false,cur:null,last:null,started:false,more:{}};
+try{const s=JSON.parse(localStorage.getItem(KEY)||'null');if(s)S={...S,a:s.a||{},ov:s.ov||{},around:!!s.around}}catch(e){}
+try{localStorage.removeItem('exposure-scale-v2')}catch(e){} // answers from the previous version no longer fit the questions
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify({a:S.a,ov:S.ov,around:S.around}))}catch(e){}};
 let pick=[]; // working selection for multi questions
 
-/* ===== logic ===== */
+/* ===== logic (mirrored in skills/exposure-scale/scripts/exposure.py; tools/compare_logic.mjs keeps them in step) ===== */
 // Conditions in content.json: {question, equals | notEquals | minCount} or {minLevel}. minCount ignores exclusive options such as "None".
 function meets(c,a){
   if(!c)return true;
@@ -310,23 +208,24 @@ function meets(c,a){
   return true;
 }
 const visibleQuestions=(a=S.a)=>QUESTIONS.filter(q=>meets(q.showIf,a));
-// optionsFrom reuses the options picked in another question; the question's own options follow them
+// "above" hides the options at or below the level picked in another question, so "Have you gone further?" only lists what is further
 function optionsOf(q,a=S.a){
-  if(!q.optionsFrom)return q.options;
-  const sel=a[q.optionsFrom];
-  const from=Array.isArray(sel)?optionsOf(QUESTION_BY_ID[q.optionsFrom],a).filter(o=>sel.includes(o.value)&&!o.exclusive).map(({value,label,level})=>({value,label,level})):[];
-  return [...from,...(q.options||[])];
+  if(!q.above)return q.options;
+  const from=QUESTION_BY_ID[q.above],v=a[from.id];
+  if(v==null||v==='skip')return q.options;
+  const sel=from.multi?v:[v],lv=Math.max(0,...from.options.filter(o=>sel.includes(o.value)&&o.level!=null).map(o=>o.level));
+  return q.options.filter(o=>o.exclusive||o.level==null||o.level>lv);
 }
-// Placement: options carry a level. "self" is the person's guess, "tried" the furthest thing done last month,
-// "habit" what they do most weeks. Their level is the habit (or what they tried, until that's answered);
-// reach is the furthest of both, and the risks of every level up to it apply.
+// Placement: options carry a level. "habit" is what the person does most weeks, "tried" anything further they did last month.
+// Their level is the habit (or what they tried, if the habit was skipped); reach is the furthest of both,
+// and the guardrails of every level up to it apply.
 function placement(a=S.a){
   const top=role=>{let m=null;QUESTIONS.forEach(q=>{const v=a[q.id];if(q.place!==role||v==null||v==='skip'||!meets(q.showIf,a))return;
     const sel=q.multi?v:[v];optionsOf(q,a).forEach(o=>{if(sel.includes(o.value)&&o.level!=null)m=Math.max(m??0,o.level)})});return m};
-  const self=top('self'),tried=top('tried'),habit=top('habit'),level=habit??tried;
-  return {self,tried,habit,level,reach:Math.max(tried??0,habit??0)};
+  const tried=top('tried'),habit=top('habit'),level=habit??tried;
+  return {tried,habit,level,reach:Math.max(tried??0,habit??0,level==null?0:1)};
 }
-const levelNo=p=>p.level==null?null:Math.max(1,p.level); // "None of these" still sits on level 1
+const levelNo=p=>p.level==null?null:Math.max(1,p.level); // "nothing further" alone still sits on level 1
 const linksOf=s=>(s.links||[]).filter(l=>meets(l.showIf,S.a));
 function effectsOf(q,ans){
   const o={add:[],done:[]};if(ans==null||ans==='skip')return o;
@@ -343,29 +242,43 @@ function levelSteps(){
 function derived(){const st={},add=id=>{if(st[id]!=='done')st[id]='todo'};levelSteps().forEach(add);
   visibleQuestions().forEach(q=>{const e=effectsOf(q,S.a[q.id]);e.add.forEach(add);e.done.forEach(id=>st[id]='done')});return st}
 function statusMap(){const st=derived(),out={};STEPS.forEach(s=>{const o=S.ov[s.id];const v=o==='off'?undefined:(o||st[s.id]);if(v)out[s.id]=v});return out}
-// Lanes: steps that need someone else → With others; on your own, 10 min or less → Minutes, longer → An evening
-const lane=s=>s.withOthers?'others':s.minutes<=10?'minutes':'evening';
-const LANES=[['minutes','Minutes','10 min or less, on your own'],['evening','An evening','Longer, on your own'],['others','With others','Needs family, your bank or a company']];
+// Cover: a level is covered when every essential guardrail (tier 1) in the plan at that level is in place,
+// partly covered when some are, open when none is. Level 0 is "Around you".
+function coverOf(lv,st){
+  const its=STEPS.filter(s=>s.level===lv&&!s.up&&s.tier===1&&st[s.id]),ok=its.filter(s=>st[s.id]==='done').length;
+  return {n:lv,total:its.length,ok,state:ok===its.length?'covered':ok?'partly':'open'};
+}
+function cover(st=statusMap()){
+  const p=placement(),levels=LEVELS.filter(l=>l.n<=p.reach).map(l=>coverOf(l.n,st));
+  return {levels,covered:levels.filter(l=>l.state==='covered').length};
+}
+// What to do first: an essential guardrail before anything else, then by impact, the higher level, the shorter time
+const byNeed=(a,b)=>(a.tier!==1)-(b.tier!==1)||b.impact-a.impact||b.level-a.level||a.minutes-b.minutes;
+function firstStep(st=statusMap()){
+  const reach=placement().reach;
+  return STEPS.filter(s=>st[s.id]==='todo'&&!s.up&&s.level>=1&&s.level<=reach).sort(byNeed)[0]||null;
+}
+const isOptional=q=>!!OPTIONAL[q.part];
+// The next question: the main check first; the optional part only once the person has asked for it
+function current(){const V=visibleQuestions();if(S.cur){const q=V.find(q=>q.id===S.cur);if(q)return q}
+  return V.find(q=>!(q.id in S.a)&&(S.around||!isOptional(q)))}
+const placed=()=>levelNo(placement())!=null&&!visibleQuestions().some(q=>q.place&&!(q.id in S.a));
+
 const fmt=m=>m<60?`${m} min`:`${Math.floor(m/60)} h${m%60?' '+(m%60)+' min':''}`;
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const impactDots=s=>`<span class="imp" title="Impact ${s.impact} of 3" aria-label="Impact ${s.impact} of 3">${[1,2,3].map(n=>`<i class="${n<=s.impact?'on':''}"></i>`).join('')}</span>`;
-const current=()=>{if(S.cur){const q=visibleQuestions().find(q=>q.id===S.cur);if(q)return q}return visibleQuestions().find(q=>!(q.id in S.a))};
 function ansText(q,ans){if(ans==='skip')return 'Skipped';const o=optionsOf(q),sel=q.multi?ans:[ans];return o.filter(x=>sel.includes(x.value)).map(x=>x.label).join(', ')||'—'}
-function effPills(q){
-  const st=statusMap(),e=effectsOf(q,S.a[q.id]);
-  const add=[...new Set(e.add)].filter(id=>st[id]==='todo'),ok=[...new Set(e.done)];
-  const p=[];if(add.length)p.push(`<span class="pill add">+${add.length} · ${fmt(add.reduce((t,id)=>t+STEP_BY_ID[id].minutes,0))}</span>`);
-  if(ok.length)p.push(`<span class="pill ok">✓ ${ok.length} in place</span>`);
-  return p.join('')||'<span class="pill">no change</span>';
-}
-const placed=()=>levelNo(placement())!=null&&!visibleQuestions().some(q=>q.place&&!(q.id in S.a));
-function guessNote(p){const n=levelNo(p),t=[];
-  if(p.self!=null)t.push(p.self===n?'Same as your guess.':`You guessed ${p.self}.`);
-  if(p.tried>n)t.push(`You’ve tried ${p.tried}.`);
-  return t.join(' ')}
+const STATE={covered:'Covered',partly:'Partly covered',open:'Open'};
+const coverText=c=>c.total?`${STATE[c.state]} · ${c.ok} of ${c.total} ${c.total===1?'guardrail':'guardrails'} in place`:'Nothing to do';
+const srcLink=id=>{const s=SOURCE_BY_ID[id];return s?` <a href="${esc(s.url)}" target="_blank" rel="noopener">Source: ${esc(s.label)}</a>`:''};
+// Which answer put a step in the plan, for the "From your answer" line
+function whyOf(id){const out=[];
+  visibleQuestions().forEach(q=>{const ans=S.a[q.id];if(ans==null||ans==='skip')return;const sel=q.multi?ans:[ans];
+    const hit=optionsOf(q).filter(o=>sel.includes(o.value)&&(o.add||[]).includes(id)).map(o=>o.label);
+    if(hit.length)out.push(`${q.label} · ${hit.join(', ')}`)});
+  return out.join('; ')}
 
 /* ===== chat prompt: the check in the person's own AI app, built from content.json ===== */
-// The model reads memory and past chats as evidence, asks only the guess upfront, shows the result,
+// The model asks only the level upfront, reads memory and past chats as evidence for the rest, shows the result,
 // then asks what it couldn't tell. tools/check_prompt.mjs checks coverage and size.
 const condText=c=>!c?'':'minLevel' in c?`only if reach ≥ ${c.minLevel}`
   :'minCount' in c?`only if ${c.question} has an answer other than None`
@@ -375,25 +288,23 @@ const effText=x=>[...(x.add||[]).map(id=>'+'+id),...(x.done||[]).map(id=>'✓'+i
 const PROMPT_REF='—— Reference for the AI: scoring, levels, questions, steps ——';
 function buildPrompt(){
   const L=LEVELS.map(l=>`${l.n} ${l.name}: ${l.line}${l.up?` To get here: ${l.up}`:''} Risk: ${l.risk} Guardrails: ${l.guards.join(', ')}.${l.climb.length?` Climb: ${l.climb.join(', ')}.`:''}`).join('\n');
-  const Q=QUESTIONS.filter(q=>q.place!=='self').map(q=>{
-    const role=q.place==='tried'?' [tried: the highest level picked]':q.place==='habit'?' [habit: the level picked]':'';
-    const opts=(q.optionsFrom?[`the levels picked in ${q.optionsFrom}`]:[]).concat((q.options||[]).map(o=>
-      `${o.label}${o.level!=null?` (${o.level})`:''}${o.exclusive?' (alone)':''}${effText(o)?' → '+effText(o):''}`));
-    const eff=(q.effects||[]).map(e=>`${e.if?condText(e.if).replace('only if','if'):'always'} → ${effText(e)}`);
-    return `${q.id}: ${q.text}${role}${q.multi?' Pick all that apply.':''}${q.showIf?` (${condText(q.showIf)})`:''}\n  ${opts.join(' / ')}${eff.length?`\n  Also: ${eff.join('; ')}`:''}`}).join('\n');
+  const Q=QUESTIONS.map(q=>{
+    const role=q.place==='tried'?' [tried: the highest level picked]':q.place==='habit'?' [my level]':'';
+    const opts=q.options.map(o=>`${o.label}${o.level!=null?` (${o.level})`:''}${o.exclusive?' (alone)':''}${effText(o)?' → '+effText(o):''}`);
+    return `${q.id}: ${q.text}${role}${isOptional(q)?' [optional]':''}${q.multi?' (pick several)':''}${q.showIf?` (${condText(q.showIf)})`:''}\n  ${opts.join(' / ')}`}).join('\n');
   const T=STEPS.map(s=>{const ln=(s.links||[]).map(l=>`${l.url}${l.showIf?` (${condText(l.showIf).replace('only if ','')})`:''}`);
-    return `${s.id}: ${s.title} · ${s.minutes} min · impact ${s.impact}${s.withOthers?' · with others':''}${ln.length?' · '+ln.join(' '):''}`}).join('\n');
-  return `Run the Exposure Scale check with me (https://yaedin.github.io/exposure-scale/). It places me on a five-level scale of how far I hand work to AI and shows the risks that come with it.
+    return `${s.id}: ${s.title} · ${s.minutes} min · impact ${s.impact}${s.tier===1?' · essential':''}${s.withOthers?' · with others':''}${ln.length?' · '+ln.join(' '):''}`}).join('\n');
+  return `Run the Exposure Scale check with me (https://yaedin.github.io/exposure-scale/). It checks whether my guardrails keep up with how far I hand work to AI.
 
-1. First ask where I'd put myself, 1 to 5, with the levels from the reference below. Wait for my answer.
+1. First ask how far I go with AI in most weeks, 1 to 5, with the levels from the reference below. Wait for my answer.
 2. Then work out the rest yourself from what you know about me: memory, past chats, this account. Back each answer with what I did and roughly when. No evidence, no answer. If you can't see memory or past chats, say so.
-3. Show my level with the evidence and compare it with my guess. Then the risks that apply to me and my first steps, with links. Keep it short.
+3. Show each level up to mine as covered, partly covered or open, with the evidence. Then the one step to do first and the next few, with links. Keep it short.
 4. End with two to four numbered questions for what you couldn't tell, and update the result when I answer.
 
 Use only the reference below; don't invent steps or links. Never ask for passwords, codes or account numbers, and don't change any settings for me.
 
 ${PROMPT_REF}
-How to score: my level is the habit level (at least 1); my reach is the higher of tried and habit. The plan is the guardrails of every level up to my reach and the climb steps of the next level, plus the steps my answers add (+id), minus the ones already in place (✓id). Group the plan: Minutes (10 min or less, on my own), An evening (longer, on my own), With others; higher impact first. Show at most eight steps, each with title, time, one line on why it applies and its link, and say how many more. Also say what the next level looks like and how to get there.
+How to score: my level is the weekly answer (at least 1); my reach is the higher of that and anything I tried. My plan: the guardrails of every level up to my reach, the climb steps of the next level and the steps my answers add (+id), minus those already in place (✓id). A level is covered when every essential step of that level in my plan is in place, partly covered when some are, open when none is. Do first: the essential step still to do with the highest impact, at the highest level. Show at most eight steps with title, time, why it applies and link, and say how many more. Say what the next level looks like and how to get there. Questions marked optional are about other people's AI: offer them at the end.
 
 LEVELS
 ${L}
@@ -402,7 +313,7 @@ Around me, at every level: ${AROUND.risk}
 QUESTIONS (level in brackets; → +id adds a step, ✓id means it's in place)
 ${Q}
 
-STEPS (id: title · time · impact 1–3 · link)
+STEPS (id: title · time · impact 1–3 · essential · link)
 ${T}`;
 }
 // ChatGPT reads a prefill from the part after #, which never reaches a server; for the others the prompt is pasted
@@ -431,272 +342,240 @@ function setTheme(t){
   try{t==='auto'?localStorage.removeItem(THEME_KEY):localStorage.setItem(THEME_KEY,t)}catch(_){}
   themeButton();
 }
+// Before the first answer, a start screen says what the check is for
+const onStart=()=>!S.started&&!Object.keys(S.a).length&&!Object.keys(S.ov).length;
 function render(){
-  const st=statusMap(),inPlan=Object.keys(st),n=placed()?levelNo(placement()):'';
-  const T=[['check','Check',''],['level','Level',n??''],['plan','Plan',inPlan.filter(i=>st[i]==='todo').length||''],['all','All steps',STEPS.length]];
-  $('tabs').innerHTML=T.map(([k,l,c])=>`<button type="button" role="tab" data-tab="${k}" aria-selected="${S.tab===k}">${l}${c!==''?`<span class="c">${c}</span>`:''}</button>`).join('');
-  if(S.tab!=='check')shownStage=null;
-  $('view').innerHTML=S.tab==='check'?vCheck(st):S.tab==='level'?vLevel(st):S.tab==='plan'?vPlan(st):vAll(st);
+  const q=onStart()?null:current();
+  $('view').innerHTML=onStart()?vStart():q?vQuestion(q):placed()?vResult():vUnplaced();
 }
-
-function levelBox(){
-  if(!placed())return '';const p=placement(),n=levelNo(p);
-  return `<button type="button" class="tally lvbox" data-tab="level"><span class="label">Your level</span>
-    <span class="lv"><span class="n">${n}</span><b>${esc(LEVELS[n-1].name)}</b></span>
-    <span class="seg" aria-hidden="true">${LEVELS.map(l=>`<i class="${l.n<=n?'on':l.n<=p.reach?'tr':''}"></i>`).join('')}</span></button>`;
-}
-function tallyHTML(st){
-  const rows=LANES.map(([k,l])=>{const ids=STEPS.filter(s=>st[s.id]&&lane(s)===k);const todo=ids.filter(s=>st[s.id]==='todo');
-    return `<div class="lane-row"><b>${l}</b><span class="v">${todo.length?fmt(todo.reduce((t,s)=>t+s.minutes,0)):'—'}</span>
-      <span class="d">${todo.length} to do${ids.length-todo.length?` · ${ids.length-todo.length} in place`:''}</span>
-      <div class="dots">${ids.map(s=>`<i class="${st[s.id]==='done'?'ok':''}" title="${esc(s.title)}"></i>`).join('')}</div></div>`}).join('');
-  return `<div class="tally"><div class="label">Your plan so far</div>${rows}</div>`;
-}
-
-function replyHTML(lastQ){
-  if(!lastQ||S.a[lastQ.id]==='skip')return '';
-  const you=`<span class="you">${esc(lastQ.label)} · ${esc(ansText(lastQ,S.a[lastQ.id]))}</span>`;
-  if(lastQ.place==='self')return `<div class="reply">${you}<span>Noted. Now what you actually do.</span></div>`;
-  if(lastQ.place&&placed()){const p=placement(),n=levelNo(p),L=LEVELS[n-1];
-    return `<div class="reply">${you}<span><b>Level ${n} · ${esc(L.name)}.</b> ${esc(L.line)}</span>${guessNote(p)?`<span class="you">${esc(guessNote(p))}</span>`:''}
-      <div class="eff"><button type="button" class="pill go-lv" data-tab="level">See your level</button></div></div>`}
-  const sel=lastQ.multi?S.a[lastQ.id]:[S.a[lastQ.id]];const note=optionsOf(lastQ).filter(x=>sel.includes(x.value)).map(x=>x.note).filter(Boolean).join(' ');
-  return `<div class="reply">${you}${note?`<span>${esc(note)}</span>`:''}${lastQ.place?'':`<div class="eff">${effPills(lastQ)}</div>`}</div>`;
-}
-
+const CHECK='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
 // Start over asks once before it deletes the saved answers
-const restartHTML=()=>S.confirm?`<span class="confirm"><span>Delete all answers and ticks?</span><button type="button" class="ghost yes" data-restart-yes>Yes, start over</button><button type="button" class="ghost" data-restart-no>Cancel</button></span>`
-  :`<button type="button" class="ghost" data-restart>Start over</button>`;
-
-// The card animates in only when a new screen appears, not when the same one redraws after a tap
+const restartHTML=()=>S.confirm?`<span class="confirm"><span>Delete all answers and ticks?</span><button type="button" class="link" data-restart-yes>Yes, start over</button><button type="button" class="link" data-restart-no>Cancel</button></span>`
+  :`<button type="button" class="link" data-restart>Start over</button>`;
+// A screen animates in only when it is new, not when the same one redraws after a tap
 let shownStage=null;
 const stageClass=k=>{const still=k===shownStage;shownStage=k;return still?'q still':'q'};
 
-// Before the first answer, a start screen says what the check is for
-const onStart=()=>!S.started&&!Object.keys(S.a).length&&!Object.keys(S.ov).length;
+/* ----- start ----- */
 function vStart(){
-  return `<div class="startscr"><div class="${stageClass('start')} start"><h2>${esc(INTRO.title)}</h2><p class="lede">${esc(INTRO.line)}</p>
-    <ol class="preview" aria-label="The five levels">${LEVELS.map(l=>`<li style="--k:${l.n}"><span class="pn num">${l.n}</span><span>${esc(l.name)}</span></li>`).join('')}</ol>
-    <div class="qfoot"><button type="button" class="btn" data-start>Start</button>${INTRO.ai?`<button type="button" class="ghost" data-ai aria-expanded="${!!S.ai}" aria-controls="aipanel">${esc(INTRO.ai)}</button>`:''}<span class="keys">press Enter</span></div>
-    ${INTRO.ai&&S.ai?useAiHTML():''}</div></div>`;
+  return `<div class="cols"><section class="lead ${stageClass('start')}"><h1>${esc(INTRO.title)}</h1><p class="lede">${esc(INTRO.line)}</p>
+      <div class="acts"><button type="button" class="btn wash" data-start>Start</button><button type="button" class="link" data-ai aria-expanded="${!!S.ai}" aria-controls="aipanel">${esc(INTRO.ai)}</button></div>
+      ${S.ai?useAiHTML():''}</section>
+    <section class="side"><ol class="rail" aria-label="The five levels">${LEVELS.map(l=>`<li><span class="rl"><span class="node num">${l.n}</span><i></i></span>
+      <div class="lvc"><div class="lvh"><h2>${esc(l.name)}</h2><span class="m">${esc(l.line)}</span></div></div></li>`).join('')}</ol></section></div>`;
 }
 // "Use your AI" opens a panel: what the prompt does in three lines, the full prompt on request, then the apps.
 // Each app link copies the prompt and opens the app (ChatGPT also gets it prefilled), so pasting always works.
 function useAiHTML(){const p=buildPrompt();
-  return `<div class="useai" id="aipanel"><ul class="ailines">${INTRO.aiLines.map(l=>`<li>${esc(l)}</li>`).join('')}</ul>
-    <div><button type="button" class="textbtn" data-show-prompt aria-expanded="${!!S.showPrompt}">${S.showPrompt?'Hide the prompt':'Show the full prompt'}</button></div>
+  return `<div class="useai" id="aipanel"><ul>${INTRO.aiLines.map(l=>`<li>${esc(l)}</li>`).join('')}</ul>
+    <div><button type="button" class="link" data-show-prompt aria-expanded="${!!S.showPrompt}">${S.showPrompt?'Hide the prompt':'Show the full prompt'}</button></div>
     ${S.showPrompt?`<div class="promptbox" tabindex="0" aria-label="The full prompt">${esc(p)}</div>`:''}
-    <div class="chats">${CHATS.map(([k,name,url])=>`<a class="chatbtn" data-chat="${k}" href="${esc(url(p))}" target="_blank" rel="noopener">${name}</a>`).join('')}
-    <button type="button" class="chatbtn" data-copy-prompt>Copy prompt</button></div>
-    <p class="hint copied" id="copied" aria-live="polite"></p></div>`}
-function promptCopied(ok){const n=$('copied');if(n)n.textContent=ok?INTRO.copied:'Couldn’t copy. Use Copy prompt, then paste it.'}
+    <div class="acts">${CHATS.map(([k,name,url])=>`<a class="btn" data-chat="${k}" href="${esc(url(p))}" target="_blank" rel="noopener">${name}</a>`).join('')}
+    <button type="button" class="btn" data-copy-prompt>Copy prompt</button></div>
+    <p class="copied" id="copied" aria-live="polite"></p></div>`}
+const say=t=>{const n=$('copied');if(n)n.textContent=t};
+const promptCopied=ok=>say(ok?INTRO.copied:'Couldn’t copy. Use Copy prompt, then paste it.');
 
-function vCheck(st){
-  if(onStart())return vStart();
-  const V=visibleQuestions(),q=current(),answered=V.filter(x=>x.id in S.a).length;
-  const lastQ=S.last&&V.find(x=>x.id===S.last);
-  let stage;
-  if(q){
-    const opts=optionsOf(q);
-    if(q.multi&&pick.__for!==q.id){pick=Array.isArray(S.a[q.id])?[...S.a[q.id]]:[];pick.__for=q.id}
-    const prevIdx=V.indexOf(q)-1,front=V.find(x=>!(x.id in S.a)&&x!==q);
-    // going back to an answered question: offer the way back to where they left off
-    const resume=q.id in S.a?`<button type="button" class="ghost" data-resume>${front?`Back to question ${V.indexOf(front)+1}`:'Back to the result'}</button>`:'';
-    stage=`<div class="${stageClass('q-'+q.id)}${q.multi?' multi':''}" id="q-${q.id}">
-      <h2>${esc(q.text)}</h2>${q.hint?`<p class="hint">${esc(q.hint)}</p>`:''}
-      <div class="opts">${opts.map((o,i)=>{const on=q.multi?pick.includes(o.value):S.a[q.id]===o.value;
-        return `<button type="button" class="opt" data-pick="${o.value}" aria-pressed="${on}"><span class="k">${i+1}</span><span class="l">${esc(o.label)}${o.detail?`<span class="s">${esc(o.detail)}</span>`:''}</span>${q.multi?'<span class="box"></span>':''}</button>`}).join('')}</div>
-      <div class="qfoot">${q.multi?`<button type="button" class="btn" data-next ${pick.length?'':'disabled'}><span>Continue${pick.length?` · <span class="num">${pick.length}</span>`:''}</span></button>`:''}
-        ${prevIdx>=0?`<button type="button" class="ghost" data-back="${V[prevIdx].id}">Back</button>`:''}
-        <button type="button" class="ghost" data-skip>Skip</button>${resume}${answered?restartHTML():''}
-        <span class="keys">${q.multi?'1–'+opts.length+' toggle · Enter':'press 1–'+opts.length}</span></div></div>`;
-  }else if(placed()){
-    // the end of the check: the result itself, with the answers folded away
-    const answers=V.filter(x=>x.id in S.a).map(x=>`<button type="button" data-edit="${x.id}"><span>${esc(x.label)}</span><span class="num" style="font-size:var(--t-xs);color:var(--muted)">edit</span><span class="a">${esc(ansText(x,S.a[x.id]))}</span></button>`).join('');
-    return `<div class="${stageClass('fin')} fin">${resultHTML(st)}
-      <details class="yours"><summary>Your answers (${answered})</summary><div class="answers">${answers}</div></details>
-      <div class="qfoot">${restartHTML()}</div></div>`;
+/* ----- questions ----- */
+// After each answer: what it changed, the fact behind it with its source, and the level's state once its questions are done
+function replyHTML(q){
+  if(!q||!(q.id in S.a)||S.a[q.id]==='skip')return '';
+  const st=statusMap(),lines=[],title=id=>STEP_BY_ID[id].title;
+  const list=ids=>ids.length>2?`${ids.length} steps, the first is “${esc(title(ids[0]))}”`:ids.map(id=>esc(title(id))).join(' · ');
+  if(q.place){
+    if(placed()){const p=placement(),n=levelNo(p);
+      lines.push(`<span><b>Level ${n} · ${esc(LEVELS[n-1].name)}.</b> ${p.reach>n?`You’ve tried level ${p.reach}, so its guardrails count too. `:''}Now the guardrails${p.reach>1?`, level by level up to ${p.reach}`:' for level 1'}.</span>`)}
   }else{
-    const todo=STEPS.filter(s=>st[s.id]==='todo');
-    stage=`<div class="${stageClass('fin')} fin"><h2>That’s the picture.</h2><p>${todo.length} steps in your plan, about ${fmt(todo.reduce((t,s)=>t+s.minutes,0))} in total.</p>
-      <div class="qfoot"><button type="button" class="btn" data-tab="plan">Open your plan</button>${restartHTML()}</div></div>`;
+    const e=effectsOf(q,S.a[q.id]),ok=[...new Set(e.done)],add=[...new Set(e.add)].filter(id=>st[id]==='todo');
+    if(ok.length)lines.push(`<span>In place: ${list(ok)}</span>`);
+    if(add.length)lines.push(`<span>To do: ${list(add)}</span>`);
+    const sel=q.multi?S.a[q.id]:[S.a[q.id]],seen=new Set();
+    optionsOf(q).filter(o=>sel.includes(o.value)&&o.note&&!seen.has(o.note)&&seen.add(o.note)).forEach(o=>lines.push(`<span>${esc(o.note)}${srcLink(o.src)}</span>`));
+    if(q.covers&&!visibleQuestions().some(x=>x.covers===q.covers&&!(x.id in S.a)))
+      lines.push(`<span><b>Level ${q.covers} · ${esc(LEVELS[q.covers-1].name)}:</b> ${coverText(coverOf(q.covers,st)).toLowerCase()}</span>`);
   }
-  const part=q&&PARTS.find(p=>p.id===q.part);
-  const answers=V.filter(x=>x.id in S.a).map(x=>`<button type="button" data-edit="${x.id}"><span>${esc(x.label)}</span><span class="num" style="font-size:var(--t-xs);color:var(--muted)">edit</span><span class="a">${esc(ansText(x,S.a[x.id]))}</span></button>`).join('');
-  return `<div class="check"><div class="stage">
-      <div class="prog">${part?`<span class="label">${esc(part.name)}</span>`:''}<div class="segs" role="img" aria-label="${answered} of ${V.length} answered">${V.map(x=>`<i class="${x===q?'cur':!(x.id in S.a)?'':S.a[x.id]==='skip'?'sk':'ok'}" title="${esc(x.label)}"></i>`).join('')}</div>
-        <span class="num">${q?`${V.indexOf(q)+1}/${V.length}`:`${answered}/${V.length}`}${q&&q.id in S.a?` · ${answered} answered`:''}</span></div>
-      ${replyHTML(lastQ)}${stage}</div>
-    <aside class="side">${levelBox()}${tallyHTML(st)}${answers?`<div><div class="label" style="margin:0 0 6px 8px">Your answers</div><div class="answers">${answers}</div></div>`:''}</aside></div>`;
+  return `<div class="reply" aria-live="polite"><span class="you">${esc(q.label)} · ${esc(ansText(q,S.a[q.id]))}</span>${lines.join('')}</div>`;
+}
+function vQuestion(q){
+  const V=visibleQuestions().filter(x=>isOptional(x)===isOptional(q)),opts=optionsOf(q),answered=V.filter(x=>x.id in S.a).length;
+  const lastQ=S.last&&visibleQuestions().find(x=>x.id===S.last);
+  if(q.multi&&pick.__for!==q.id){pick=Array.isArray(S.a[q.id])?S.a[q.id].filter(v=>opts.some(o=>o.value===v)):[];pick.__for=q.id}
+  const prevIdx=V.indexOf(q)-1,front=V.find(x=>!(x.id in S.a)&&x!==q);
+  // going back to an answered question: offer the way back to where they left off
+  const resume=q.id in S.a?`<button type="button" class="link" data-resume>${front?`Back to question ${V.indexOf(front)+1}`:'Back to the result'}</button>`
+    :isOptional(q)?'<button type="button" class="link" data-around-stop>Back to the result</button>':'';
+  const where=q.covers?`Level ${q.covers} · ${LEVELS[q.covers-1].name}`:PARTS.find(p=>p.id===q.part).name;
+  return `<div class="stage">
+    <div class="prog"><span class="label">${esc(where)}</span><div class="segs" role="img" aria-label="${answered} of ${V.length} answered">${V.map(x=>`<i class="${x===q?'cur':!(x.id in S.a)?'':S.a[x.id]==='skip'?'sk':'ok'}"></i>`).join('')}</div>
+      <span class="num">${V.indexOf(q)+1}/${V.length}</span></div>
+    ${replyHTML(lastQ)}
+    <div class="${stageClass('q-'+q.id)}${q.multi?' multi':''}" id="q-${q.id}">
+      <h1>${esc(q.text)}</h1>${q.hint?`<p class="hint">${esc(q.hint)}</p>`:''}
+      <div class="opts">${opts.map((o,i)=>{const on=q.multi?pick.includes(o.value):S.a[q.id]===o.value;
+        return `<button type="button" class="opt" data-pick="${o.value}" aria-pressed="${on}"><span class="mk${on?' wash':''}">${on&&q.multi?CHECK:i+1}</span><span class="l"><span class="t">${esc(o.label)}</span>${o.detail?`<span class="s">${esc(o.detail)}</span>`:''}</span></button>`}).join('')}</div>
+      <div class="acts">${q.multi?`<button type="button" class="btn wash" data-next ${pick.length?'':'disabled'}><span>Continue${pick.length?` · <span class="num">${pick.length}</span>`:''}</span></button>`:''}
+        ${prevIdx>=0?`<button type="button" class="link" data-back="${V[prevIdx].id}">Back</button>`:''}
+        <button type="button" class="link" data-skip>Skip</button>${resume}${restartHTML()}
+        <span class="keys">${q.multi?'1–'+opts.length+' to pick · Enter':'press 1–'+opts.length}</span></div></div></div>`;
+}
+// Skipped both level questions: there is nothing to show yet
+function vUnplaced(){
+  return `<div class="stage ${stageClass('unplaced')}"><h1>Pick your level to see the result</h1><p class="lede">The guardrails depend on how far you go with AI, so that question can’t be skipped.</p>
+    <div class="acts"><button type="button" class="btn wash" data-edit="${QUESTIONS.find(q=>q.place==='habit').id}">Pick your level</button>${restartHTML()}</div></div>`;
 }
 
-// Steps open when they have links or agent help; the title becomes the toggle
+/* ----- result ----- */
 const SKILL_URL='https://github.com/yaedin/exposure-scale#agent-skill';
-const opens=s=>linksOf(s).length>0||!!s.agentHelp;
-const chips=s=>(s.up?'<span class="ag up">Level up</span>':'')+(s.agentHelp?'<span class="ag">Agent helps</span>':'');
-const toggleAttrs=s=>opens(s)?`type="button" data-open="${s.id}" aria-expanded="${!!S.open[s.id]}"`:'';
-const moreHTML=s=>S.open[s.id]&&opens(s)?`<div class="more">${linksOf(s).length?`<div class="links">${linksOf(s).map(l=>`<a class="go" href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.label)}</a>`).join('')}</div>`:''}${s.agentHelp?`<p class="ah">${esc(s.agentHelp)} <a href="${SKILL_URL}" target="_blank" rel="noopener">Get the skill</a></p>`:''}</div>`:'';
-const tag=s=>opens(s)?'button':'div';
-
-function card(s,stv,why){
-  return `<div class="card ${stv==='done'?'is-done':''}">
-    <button type="button" class="tick" data-done="${s.id}" aria-pressed="${stv==='done'}" aria-label="Mark done"></button>
-    <${tag(s)} class="ct" ${toggleAttrs(s)}>${esc(s.title)}</${tag(s)}>
-    <div class="meta"><span class="num">${fmt(s.minutes)}</span>${impactDots(s)}${chips(s)}</div>
-    ${why?`<p class="why">From: ${esc(why)}</p>`:''}
-    ${moreHTML(s)}
-  </div>`;
+function stepRow(s,st,full){const done=st[s.id]==='done',links=linksOf(s);
+  return `<li class="step${done?' is-done':''}">
+    <button type="button" class="tick${done?' wash':''}" data-done="${s.id}" aria-pressed="${done}" aria-label="${done?'In place':'Mark as in place'}: ${esc(s.title)}">${done?CHECK:''}</button>
+    <div class="sb"><span class="st">${esc(s.title)}</span>${full&&s.why?`<span class="sw">${esc(s.why)}</span>`:''}
+      <span class="sm"><span class="num">${fmt(s.minutes)}</span>${s.withOthers?' · with someone else':''}${s.agentHelp?` · <a href="${SKILL_URL}" target="_blank" rel="noopener" title="${esc(s.agentHelp)}">an agent can help</a>`:''}</span>
+      ${links.length?`<span class="links">${links.map(l=>`<a href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.label)}</a>`).join('')}</span>`:''}</div></li>`}
+const stepList=(its,st,full)=>its.length?`<ul class="steps">${its.map(s=>stepRow(s,st,full)).join('')}</ul>`:'';
+// A level's steps: the essential guardrails first, the rest behind "More steps"
+function groupHTML(lv,st){
+  const its=STEPS.filter(s=>s.level===lv&&!s.up),ess=its.filter(s=>s.tier===1&&st[s.id]).sort(byNeed);
+  const rest=[...its.filter(s=>s.tier!==1&&st[s.id]).sort(byNeed),...its.filter(s=>!st[s.id])],open=S.more[lv];
+  return `${stepList(ess,st,true)}${rest.length?`<div><button type="button" class="link" data-more="${lv}" aria-expanded="${!!open}">${open?'Fewer steps':`More steps${lv?' at this level':''} (${rest.length})`}</button></div>${open?stepList(rest,st,false):''}`:''}`;
 }
-
-/* ===== result: the scale as the outline (end of the check and the Level tab) ===== */
-// Which answer put a step in the plan, for the "From:" line; steps that come only from the level get none
-function whyOf(id){const out=[];
-  visibleQuestions().forEach(q=>{const ans=S.a[q.id];if(ans==null||ans==='skip')return;const sel=q.multi?ans:[ans];
-    const hit=optionsOf(q).filter(o=>sel.includes(o.value)&&[...(o.add||[]),...(o.done||[])].includes(id)).map(o=>o.label);
-    if(hit.length)out.push(`${q.label} · ${hit.join(', ')}`);
-    else if((q.effects||[]).some(e=>meets(e.if,S.a)&&(e.add||[]).includes(id)))out.push(`${q.label} · ${ansText(q,ans)}`)});
-  return out.join('; ')}
-const CHEV='<svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
-const byNeed=st=>(a,b)=>(st[a.id]==='done')-(st[b.id]==='done')||b.impact-a.impact||a.minutes-b.minutes;
 let lvShown=null; // the level open on screen, so a tap on it closes it
-// Levels below and at yours, and any you've tried, open to their risk and steps; the next level also to the steps up.
-// Levels beyond show only what they look like. One open at a time; by default the next level (or yours at the top).
-function resultHTML(st,{sources=false}={}){
-  const p=placement(),n=levelNo(p),L=LEVELS[n-1],nx=LEVELS[n];
-  const riskSteps=lv=>STEPS.filter(s=>s.level===lv&&!s.up&&st[s.id]);
-  const count=its=>{const ok=its.filter(s=>st[s.id]==='done').length,left=its.filter(s=>st[s.id]==='todo').reduce((t,s)=>t+s.minutes,0);
-    return `${ok} of ${its.length} in place${left?` · ${fmt(left)}`:''}`};
-  const open=S.lvOpen===undefined?(nx?nx.n:n):S.lvOpen;lvShown=open;
+function vResult(){
+  const st=statusMap(),p=placement(),n=levelNo(p),c=cover(st),m=c.levels.length,k=c.covered,first=firstStep(st),nx=LEVELS[n];
+  const verdict=k===m?(m===1?'Your guardrails keep up with level 1':`Your guardrails keep up with all ${m} levels you use`)
+    :k===0?(m===1?'Level 1 is still open':`None of the ${m} levels you use is covered yet`)
+    :`${k} of the ${m} levels you use ${k===1?'is':'are'} covered`;
+  const open=S.lvOpen===undefined?(first?first.level:nx&&nx.n>p.reach?nx.n:n):S.lvOpen;lvShown=open;
   const rows=LEVELS.map(l=>{
-    const kind=l.n<n?'below':l.n===n?'you':l.n===n+1?'next':l.n<=p.reach?'tried':'above';
-    const applies=l.n<=p.reach,its=applies?riskSteps(l.n).sort(byNeed(st)):[];
-    const climb=kind==='next'?l.climb.filter(id=>st[id]).map(id=>STEP_BY_ID[id]):[];
-    const tags=[];
-    if(kind==='you')tags.push(`<span class="tg you">You${p.self===n?' · your guess':''}</span>`);
-    if(kind==='next')tags.push(`<span class="tg nx">Next${applies?' · tried':''}</span>`);
-    if(kind==='tried')tags.push('<span class="tg">Tried</span>');
-    if(p.self===l.n&&kind!=='you')tags.push('<span class="tg">Your guess</span>');
-    const can=kind!=='above'&&(applies||kind==='next');
-    const meta=!can?esc(l.line):[climb.length?`Level up: ${climb.length} ${climb.length===1?'step':'steps'}`:'',
-      applies?(its.length?`Risk: ${count(its)}`:'Risk: nothing to do'):'Its risks start here'].filter(Boolean).join(' · ');
-    const t=`<span class="t"><b>${esc(l.name)}</b>${tags.join('')}</span><span class="m">${meta}</span>`;
-    const head=can?`<button type="button" class="lvh" data-lv="${l.n}" aria-expanded="${open===l.n}" aria-controls="lv-${l.n}">${t}${CHEV}</button>`:`<div class="lvh off">${t}</div>`;
+    const mine=l.n<=p.reach,next=l.n===n+1,cv=mine?c.levels[l.n-1]:null,can=mine||next;
+    const tag=l.n===n?'Your level':mine&&l.n>n?'Tried':next?'Next':'';
+    const meta=[cv?coverText(cv):next?'':l.line].filter(Boolean).map(esc);
+    const t=`<h2>${esc(l.name)}</h2><span class="m">${[tag?`<b>${tag}</b>`:'',...meta].filter(Boolean).join(' · ')}</span>`;
+    const head=can?`<button type="button" class="lvh" data-lv="${l.n}" aria-expanded="${open===l.n}" aria-controls="lv-${l.n}">${t}</button>`:`<div class="lvh">${t}</div>`;
+    const climb=next?l.climb.filter(id=>st[id]).map(id=>STEP_BY_ID[id]):[];
+    const echoQ=l.echo&&QUESTION_BY_ID[l.echo.question],echoA=echoQ&&S.a[echoQ.id],echoed=Array.isArray(echoA)?echoQ.options.filter(o=>echoA.includes(o.value)&&!o.exclusive).map(o=>o.label):[];
     const body=can&&open===l.n?`<div class="lvbody" id="lv-${l.n}">
-        ${kind==='next'?`<span class="k">To get here</span><p>${esc(l.up)}</p>${climb.map(s=>card(s,st[s.id])).join('')}`:''}
-        <span class="k">${applies?'The risk':'What comes with it'}</span><p>${esc(l.risk)}</p>
-        ${its.map(s=>card(s,st[s.id],whyOf(s.id))).join('')}</div>`:'';
-    return `<li class="${kind}"><span class="rail"><span class="node num">${l.n}</span><i></i></span><div class="lvc">${head}${body}</div></li>`}).join('');
-  const aIts=riskSteps(0).sort(byNeed(st)),aOpen=open==='around';
-  const around=`<section class="aroundbox"><button type="button" class="lvh" data-lv="around" aria-expanded="${aOpen}" aria-controls="lv-around"><span class="k">At every level</span><span class="t"><b>${esc(AROUND.name)}</b></span><span class="m">${aIts.length?count(aIts):'Nothing to do'}</span>${CHEV}</button>
-    ${aOpen?`<div class="lvbody" id="lv-around"><p>${esc(AROUND.risk)}</p>${aIts.map(s=>card(s,st[s.id],whyOf(s.id))).join('')}</div>`:''}</section>`;
-  const todo=STEPS.filter(s=>st[s.id]==='todo'),base=todo.filter(s=>s.tier===1);
-  const foot=`<div class="resfoot"><span><b class="num">${base.length?fmt(base.reduce((t,s)=>t+s.minutes,0)):'Essentials done'}</b>
-      <span>${base.length?`for the ${base.length} essentials · `:''}${todo.length} ${todo.length===1?'step':'steps'} in your plan</span></span>
-    <button type="button" class="btn" data-tab="plan">Open your plan</button></div>`;
-  return `<div class="result"><div class="rhead"><span class="label">Your result</span><h2>Level ${n} · ${esc(L.name)}</h2>
-      <p>${esc(L.line)}${guessNote(p)?' '+esc(guessNote(p)):''}</p></div>
-    <ol class="climb" aria-label="The five levels">${rows}</ol>${around}${foot}${sources?sourcesHTML():''}</div>`;
+        ${mine?`<p>${esc(l.risk)}</p>
+          ${l.case?`<p class="case">${esc(l.case.text)}${srcLink(l.case.src)}</p>`:''}
+          ${echoed.length?`<p class="case">${esc(l.echo.text)} ${esc(echoed.join(' · '))}</p>`:''}
+          ${groupHTML(l.n,st)}
+          ${climb.length?`<span class="sub">To make it your level</span><p>${esc(l.up)}</p>${stepList(climb,st,false)}`:''}`
+        :`<p>${esc(l.up)}</p>${stepList(climb,st,false)}<span class="sub">What comes with it</span><p>${esc(l.risk)}</p><span class="sub">The guardrails it needs</span>
+          <ul class="plain">${l.guards.map(id=>STEP_BY_ID[id]).filter(s=>s.tier===1).map(s=>`<li>${esc(s.title)}</li>`).join('')}</ul>`}</div>`:'';
+    return `<li class="${cv?'is-'+cv.state:'is-off'}"><span class="rl"><span class="node num${cv&&cv.state!=='open'?' wash':''}">${l.n}</span><i></i></span><div class="lvc">${head}${body}</div></li>`}).join('');
+  const lead=`<section class="lead stick ${stageClass('result')}"><span class="label">Your result</span><h1>${verdict}</h1>
+    <p class="lede">You work at level ${n} · ${esc(LEVELS[n-1].name)}${p.reach>n?` and have tried level ${p.reach}`:''}. A level counts as covered when its guardrails are in place.</p>
+    ${firstHTML(first,st,nx)}</section>`;
+  return `<div class="cols">${lead}<section class="side"><ol class="rail" aria-label="The five levels">${rows}</ol>${aroundHTML(st,open)}${toolsHTML()}</section></div>`;
 }
-const sourcesHTML=()=>`<details class="src"><summary>What the scale is based on</summary><p>The levels follow how much the person leads and how much the AI does, as in research on AI autonomy. Risk grows with what you hand over. Which risks sit at which level is our reading of the evidence, not a measurement.</p>
-  <ul>${SOURCES.map(s=>`<li><a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.label)}</a></li>`).join('')}</ul></details>`;
-
-function vLevel(st){
-  if(!placed())return `<div class="empty"><p>Three questions place you on the scale. About a minute.</p><button type="button" class="btn" data-tab="check">Start the check</button></div>`;
-  return resultHTML(st,{sources:true});
+// The one next step. When nothing is left to do, it points to the level above yours.
+function firstHTML(s,st,nx){
+  if(!s)return `<div class="first"><span class="label">Nothing left to do at your levels</span><h2>${nx?`Level ${nx.n} · ${esc(nx.name)} is the next step up`:'You’re at the top of the scale with every guardrail in place'}</h2>
+    ${nx?`<p>${esc(nx.up)}</p><div class="acts"><button type="button" class="btn wash" data-lv-show="${nx.n}">Show level ${nx.n}</button></div>`:''}</div>`;
+  const why=whyOf(s.id),links=linksOf(s);
+  return `<div class="first"><span class="label">${s.tier===1?'Do this first':'Next best step'} · ${fmt(s.minutes)} · level ${s.level}</span><h2>${esc(s.title)}</h2>
+    ${s.why?`<p>${esc(s.why)}</p>`:''}${why?`<p class="sm">From your answer: ${esc(why)}</p>`:''}
+    ${links.length?`<span class="links">${links.map(l=>`<a href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.label)}</a>`).join('')}</span>`:''}
+    ${s.agentHelp?`<p class="sm">${esc(s.agentHelp)} <a href="${SKILL_URL}" target="_blank" rel="noopener">Get the skill</a></p>`:''}
+    <div class="acts"><button type="button" class="btn wash" data-done="${s.id}" data-first>It’s in place</button></div></div>`;
 }
-
-function vPlan(st){
-  const ids=STEPS.filter(s=>st[s.id]);
-  if(!ids.length)return `<div class="empty"><p>Your plan fills in as you answer. About four minutes.</p><button type="button" class="btn" data-tab="check">Start the check</button></div>`;
-  const todo=ids.filter(s=>st[s.id]==='todo'),done=ids.filter(s=>st[s.id]==='done');
-  const base=todo.filter(s=>s.tier===1),bm=base.reduce((t,s)=>t+s.minutes,0);
-  const n=placed()?levelNo(placement()):null;
-  const head=(n?`<button type="button" class="label lvlink" data-tab="level">Level ${n} · ${esc(LEVELS[n-1].name)}</button>`:'')+(base.length?`<div class="big">${fmt(bm)}<small>to baseline</small></div><p>${base.length} baseline ${base.length===1?'step':'steps'} left. Everything in your plan: ${fmt(todo.reduce((t,s)=>t+s.minutes,0))} across ${todo.length} steps.</p>`
-    :`<div class="big">Baseline reached</div><p>${todo.length} further steps, about ${fmt(todo.reduce((t,s)=>t+s.minutes,0))}.</p>`);
-  const sortF=(a,b)=>(st[a.id]==='done')-(st[b.id]==='done')||b.impact-a.impact||a.minutes-b.minutes;
-  const lanes=LANES.map(([k,l,d])=>{const its=todo.filter(s=>lane(s)===k).sort(sortF);
-    return `<section class="lane"><h3>${l}</h3><div class="sum">${d} · ${its.length} ${its.length===1?'step':'steps'}</div>${its.map(s=>card(s,st[s.id])).join('')||'<div class="sum">Nothing here.</div>'}</section>`}).join('');
-  return `<div class="plan"><div class="gauge">${head}<div class="gbar"><i style="width:${done.length/ids.length*100}%"></i><b style="width:${todo.length/ids.length*100}%"></b></div><p class="num" style="font-size:var(--t-xs)">${done.length} in place · ${todo.length} to do</p></div>
-    <div class="lanes">${lanes}</div>
-    ${done.length?`<details class="inplace"><summary>Already in place (${done.length})</summary><ul>${done.map(s=>`<li>${esc(s.title)} <button type="button" class="textbtn" data-undo="${s.id}">undo</button></li>`).join('')}</ul></details>`:''}</div>`;
+// Around you: optional questions about other people's AI, offered after the result
+function aroundHTML(st,open){
+  const qs=visibleQuestions().filter(isOptional),left=qs.filter(q=>!(q.id in S.a)).length;
+  if(left===qs.length)return `<section class="around"><h2>${esc(AROUND.name)}</h2><p>${esc(AROUND.risk)} This part is optional.</p>
+    <div class="acts"><button type="button" class="btn" data-around>Answer ${qs.length} more questions</button></div></section>`;
+  const c=coverOf(0,st),isOpen=open==='around';
+  return `<section class="around"><button type="button" class="lvh" data-lv="around" aria-expanded="${isOpen}" aria-controls="lv-around"><h2>${esc(AROUND.name)}</h2>
+      <span class="m">${esc(c.total?`${c.ok} of ${c.total} ${c.total===1?'essential':'essentials'} in place`:'Nothing essential to do')}${left?` · ${left} ${left===1?'question':'questions'} left`:''}</span></button>
+    ${isOpen?`<div class="lvbody" id="lv-around"><p>${esc(AROUND.risk)}</p>${groupHTML(0,st)}
+      ${left?`<div class="acts"><button type="button" class="btn" data-around>Answer the last ${left}</button></div>`:''}</div>`:''}</section>`;
 }
-
-function vAll(st){
-  const f=S.f,qq=f.q.trim().toLowerCase();
-  const match=s=>(f.e==='all'||lane(s)===f.e)&&(!qq||s.title.toLowerCase().includes(qq));
-  const seg=(key,cur,opts)=>`<div class="fseg" role="group">${opts.map(([v,l])=>`<button type="button" data-f="${key}" data-v="${v}" aria-pressed="${cur===v}">${l}</button>`).join('')}</div>`;
-  const withLinks=STEPS.filter(opens),rows=withLinks.every(s=>S.open[s.id])?'open':withLinks.some(s=>S.open[s.id])?'':'closed';
-  const groups=[...LEVELS.map(l=>[l.n,`${l.n} · ${l.name}`]),[0,AROUND.name]];
-  const sections=groups.map(([lv,name])=>{const its=STEPS.filter(s=>s.level===lv&&match(s));if(!its.length)return '';
-    return `<section class="area"><h3>${esc(name)}<span class="n">${its.length}</span></h3><div class="rows">${its.map(s=>{const v=st[s.id];
-      return `<div class="row"><${tag(s)} class="rt" ${toggleAttrs(s)}><span>${esc(s.title)}</span><span class="meta"><span class="num">${fmt(s.minutes)}</span>${impactDots(s)}${chips(s)}</span></${tag(s)}>
-        <button type="button" class="st ${v||''}" data-cycle="${s.id}">${v==='todo'?'In plan':v==='done'?'Done':'Add'}</button>
-        ${moreHTML(s)}</div>`}).join('')}</div></section>`}).join('');
-  return `<div class="all"><div class="filters"><input id="search" type="search" placeholder="Search steps" value="${esc(f.q)}" aria-label="Search steps">
-    ${seg('e',f.e,[['all','Any effort'],['minutes','Minutes'],['evening','Evening'],['others','With others']])}${seg('rows',rows,[['closed','Hide links'],['open','Show links']])}</div>
-    ${sections||'<p class="nores">No steps match.</p>'}</div>`;
+function toolsHTML(){
+  const V=visibleQuestions().filter(x=>x.id in S.a);
+  const answers=S.show==='answers'?`<div class="answers">${V.map(x=>`<button type="button" data-edit="${x.id}"><span>${esc(x.label)} <span class="e">change</span></span><span class="a">${esc(ansText(x,S.a[x.id]))}</span></button>`).join('')}</div>`:'';
+  const li=s=>`<li><a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.label)}</a></li>`;
+  const basis=S.show==='basis'?`<div class="basis"><p>${esc(INTRO.basis)}</p><span class="label">The scale</span><ul>${SOURCES.filter(s=>s.basis).map(li).join('')}</ul>
+    <span class="label">The numbers and cases</span><ul>${SOURCES.filter(s=>!s.basis).map(li).join('')}</ul></div>`:'';
+  return `<div class="tools"><button type="button" class="link" data-copy-result>Copy result as text</button>
+    <button type="button" class="link" data-show="answers" aria-expanded="${S.show==='answers'}">Your answers</button>
+    <button type="button" class="link" data-show="basis" aria-expanded="${S.show==='basis'}">What this is based on</button>${restartHTML()}</div>
+    <p class="note" id="copied" aria-live="polite"></p>${answers}${basis}`;
+}
+// The result as plain text, to keep or send. Built in the browser; nothing is sent anywhere.
+function resultText(){
+  const st=statusMap(),p=placement(),n=levelNo(p),c=cover(st),first=firstStep(st);
+  return [`Exposure Scale · ${new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})}`,
+    `I work at level ${n} · ${LEVELS[n-1].name}${p.reach>n?` and have tried level ${p.reach}`:''}. ${c.covered} of ${c.levels.length} levels covered.`,
+    ...c.levels.map(l=>`${l.n} ${LEVELS[l.n-1].name}: ${coverText(l).toLowerCase()}`),
+    ...(first?[`First step: ${first.title} (${fmt(first.minutes)})`]:[]),
+    'https://yaedin.github.io/exposure-scale/'].join('\n');
 }
 
 /* ===== actions ===== */
 function answer(q,v){S.a[q.id]=v;S.last=q.id;S.cur=null;S.confirm=false;pick=[];
-  // drop answers to questions whose options came from this one, if that choice is gone
-  QUESTIONS.filter(x=>x.optionsFrom===q.id&&x.id in S.a&&S.a[x.id]!=='skip'&&!optionsOf(x).some(o=>o.value===S.a[x.id])).forEach(x=>delete S.a[x.id]);
-  save();render();focusStage()}
+  // drop answers that named an option this answer has removed ("above")
+  QUESTIONS.filter(x=>x.above===q.id&&x.id in S.a&&S.a[x.id]!=='skip').forEach(x=>{const ok=optionsOf(x).map(o=>o.value),kept=[].concat(S.a[x.id]).filter(v=>ok.includes(v));
+    if(!kept.length)delete S.a[x.id];else S.a[x.id]=x.multi?kept:kept[0]});
+  save();render();focusStage();window.scrollTo(0,0)}
 const ADVANCE_MS=180;let advancing=false;
-function focusStage(){const b=document.querySelector('.q .opt, .q .btn');if(b)b.focus({preventScroll:true})}
+function focusStage(){const b=document.querySelector('.q .opt, .q .btn, .lead .btn');if(b)b.focus({preventScroll:true})}
+const refocus=sel=>{const n=document.querySelector(sel);if(n)n.focus({preventScroll:true})};
 document.addEventListener('click',e=>{
   // a chat link copies the prompt and opens the app; the link itself does the opening
   if(e.target.closest('a[data-chat]')){copyText(buildPrompt()).then(promptCopied);return}
   const b=e.target.closest('button');if(!b)return;const d=b.dataset;
   if(d.copyPrompt!==undefined){copyText(buildPrompt()).then(promptCopied);return}
-  if(d.ai!==undefined){S.ai=!S.ai;render();const n=document.querySelector(S.ai?'[data-show-prompt]':'[data-ai]');if(n)n.focus({preventScroll:true});return}
-  if(d.lv!==undefined){const k=d.lv==='around'?'around':+d.lv;S.lvOpen=lvShown===k?null:k;render();const n=document.querySelector(`[data-lv="${d.lv}"]`);if(n)n.focus({preventScroll:true});return}
-  if(d.showPrompt!==undefined){S.showPrompt=!S.showPrompt;render();const n=document.querySelector('[data-show-prompt]');if(n)n.focus({preventScroll:true});return}
+  if(d.copyResult!==undefined){copyText(resultText()).then(ok=>say(ok?'Result copied as text. Paste it where you want to keep it.':'Couldn’t copy the result.'));return}
+  if(d.ai!==undefined){S.ai=!S.ai;render();refocus(S.ai?'[data-show-prompt]':'[data-ai]');return}
+  if(d.showPrompt!==undefined){S.showPrompt=!S.showPrompt;render();refocus('[data-show-prompt]');return}
+  if(d.lv!==undefined){const k=d.lv==='around'?'around':+d.lv;S.lvOpen=lvShown===k?null:k;render();refocus(`[data-lv="${d.lv}"]`);return}
+  if(d.lvShow!==undefined){S.lvOpen=+d.lvShow;render();refocus(`[data-lv="${d.lvShow}"]`);return}
+  if(d.more!==undefined){S.more[d.more]=!S.more[d.more];render();refocus(`[data-more="${d.more}"]`);return}
+  if(d.show){S.show=S.show===d.show?null:d.show;render();refocus(`[data-show="${d.show}"]`);return}
   if(d.restart===undefined)S.confirm=false;
   if(b.id==='theme'){setTheme(THEMES[(THEMES.indexOf(theme())+1)%THEMES.length]);return}
-  if(d.tab){S.tab=d.tab;try{history.replaceState(null,'','#'+d.tab)}catch(_){}render();window.scrollTo(0,0);return}
+  if(d.done){const st=statusMap();S.ov[d.done]=st[d.done]==='done'?'todo':'done';if(d.first!==undefined)S.lvOpen=undefined;save();render();refocus(d.first!==undefined?'.first .btn, .lvh':`[data-done="${d.done}"]`);return}
+  if(d.around!==undefined){S.around=true;S.cur=null;pick=[];save();render();focusStage();window.scrollTo(0,0);return}
+  if(d.aroundStop!==undefined){S.around=false;S.cur=null;S.lvOpen='around';pick=[];save();render();window.scrollTo(0,0);return}
+  if(d.edit){S.cur=d.edit;pick=[];render();focusStage();window.scrollTo(0,0);return}
+  if(d.restart!==undefined){S.confirm=true;render();refocus('[data-restart-yes]');return}
+  if(d.start!==undefined){S.started=true;render();focusStage();return}
+  if(d.restartYes!==undefined){S={a:{},ov:{},around:false,cur:null,last:null,started:false,more:{}};pick=[];try{localStorage.removeItem(KEY)}catch(_){}render();focusStage();window.scrollTo(0,0);return}
+  if(d.restartNo!==undefined){render();return}
   const q=current();
   if(advancing&&(d.pick!==undefined||d.next!==undefined||d.skip!==undefined||d.back))return;
   if(d.pick!==undefined&&q){
     if(q.multi){const o=optionsOf(q).find(x=>x.value===d.pick);
       if(o.exclusive)pick=pick.includes(d.pick)?[]:[d.pick];else{pick=pick.filter(v=>!optionsOf(q).find(x=>x.value===v).exclusive);pick=pick.includes(d.pick)?pick.filter(v=>v!==d.pick):[...pick,d.pick]}
-      pick.__for=q.id;render();const n=document.querySelector(`[data-pick="${d.pick}"]`);if(n)n.focus({preventScroll:true});return}
+      pick.__for=q.id;render();refocus(`[data-pick="${d.pick}"]`);return}
     // single choice: show the pick land for a moment, then move on
-    document.querySelectorAll('.q .opt').forEach(n=>n.setAttribute('aria-pressed',n===b));
+    document.querySelectorAll('.q .opt').forEach(n=>{n.setAttribute('aria-pressed',n===b);n.querySelector('.mk').classList.toggle('wash',n===b)});
     advancing=true;setTimeout(()=>{advancing=false;answer(q,d.pick)},ADVANCE_MS);return}
   if(d.next!==undefined&&q&&pick.length){answer(q,[...pick]);return}
   if(d.skip!==undefined&&q){answer(q,'skip');return}
-  if(d.back||d.edit){S.cur=d.back||d.edit;S.tab='check';pick=[];render();focusStage();return}
-  if(d.restart!==undefined){S.confirm=true;render();const y=document.querySelector('[data-restart-yes]');if(y)y.focus({preventScroll:true});return}
-  if(d.start!==undefined){S.started=true;render();focusStage();return}
-  if(d.restartYes!==undefined){S.a={};S.ov={};S.last=null;S.cur=null;S.started=false;S.lvOpen=undefined;pick=[];try{localStorage.removeItem(KEY)}catch(_){}render();focusStage();return}
-  if(d.restartNo!==undefined){render();return}
+  if(d.back){S.cur=d.back;pick=[];render();focusStage();return}
   if(d.resume!==undefined){S.cur=null;pick=[];render();focusStage();return}
-  if(d.open){S.open[d.open]=!S.open[d.open];render();const n=document.querySelector(`[data-open="${d.open}"]`);if(n)n.focus({preventScroll:true});return}
-  if(d.done){const st=statusMap();S.ov[d.done]=st[d.done]==='done'?'todo':'done';save();render();const n=document.querySelector(`[data-done="${d.done}"]`);if(n)n.focus({preventScroll:true});return}
-  if(d.undo){S.ov[d.undo]='todo';save();render();return}
-  if(d.cycle){const v=statusMap()[d.cycle];S.ov[d.cycle]=!v?'todo':v==='todo'?'done':'off';save();render();const n=document.querySelector(`[data-cycle="${d.cycle}"]`);if(n)n.focus({preventScroll:true});return}
-  if(d.f==='rows'){STEPS.forEach(s=>S.open[s.id]=d.v==='open');render();return}
-  if(d.f){S.f[d.f]=d.v;render();return}
 });
-document.addEventListener('input',e=>{if(e.target.id==='search'){S.f.q=e.target.value;const pos=e.target.selectionStart;render();const s=$('search');s.focus();try{s.setSelectionRange(pos,pos)}catch(_){}}});
 document.addEventListener('keydown',e=>{
-  if(S.tab!=='check'||e.target.tagName==='INPUT'||e.metaKey||e.ctrlKey||e.altKey)return;
+  if(e.metaKey||e.ctrlKey||e.altKey||!e.target.closest)return;
   if(onStart()){if(e.key==='Enter'&&!e.target.closest('button,a,.promptbox')){e.preventDefault();S.started=true;render();focusStage()}return}
   const q=current();if(!q)return;
   const n=parseInt(e.key,10),opts=optionsOf(q);
   if(n>=1&&n<=opts.length){e.preventDefault();document.querySelector(`[data-pick="${opts[n-1].value}"]`).click()}
   // Enter continues even when an option has focus (number keys move focus there); Space still toggles it
-  else if(e.key==='Enter'&&q.multi&&pick.length&&!e.target.closest('.qfoot button')){e.preventDefault();answer(q,[...pick])}
+  else if(e.key==='Enter'&&q.multi&&pick.length&&!e.target.closest('.acts button')){e.preventDefault();answer(q,[...pick])}
 });
 themeButton();
 fetch('content.json').then(r=>r.json()).then(c=>{
   ({intro:INTRO,around:AROUND,levels:LEVELS,sources:SOURCES,parts:PARTS,steps:STEPS,questions:QUESTIONS}=c);
   STEP_BY_ID=Object.fromEntries(STEPS.map(s=>[s.id,s]));
   QUESTION_BY_ID=Object.fromEntries(QUESTIONS.map(q=>[q.id,q]));
+  SOURCE_BY_ID=Object.fromEntries(SOURCES.map(s=>[s.id,s]));
+  OPTIONAL=Object.fromEntries(PARTS.filter(p=>p.optional).map(p=>[p.id,true]));
+  $('by').textContent=INTRO.by;
   $('checked').textContent=`Links last checked ${new Date(c.linksChecked+'T12:00').toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})}.`;
   render();
-}).catch(()=>{$('view').innerHTML='<p class="nores">Couldn’t load the questions. Reload the page.</p>'});
+}).catch(()=>{$('view').innerHTML='<p class="note">Couldn’t load the questions. Reload the page.</p>'});
 </script>
 </body>
 </html>

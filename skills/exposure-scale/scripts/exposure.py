@@ -4,11 +4,11 @@
 Usage: python3 scripts/exposure.py <command> [args]
 
   status              where things stand and what to do next
-  level               where the answers place you on the five levels, the next level and the risks
+  level               the five levels: which ones are covered, which are open, and the next level
   next                the current question
   answer Q CHOICE     answer question Q with option number(s), value(s) or "skip"; prints the next question
   answers             answers so far (change one by answering it again)
-  plan                the plan, by effort
+  plan                the plan, level by level, essential guardrails first
   step ID             how to do one step
   check ID            read-only check on this computer for one step
   detect              run every read-only check for this computer
@@ -38,6 +38,8 @@ QUESTIONS = CONTENT["questions"]
 LEVELS = CONTENT["levels"]
 AROUND = CONTENT["around"]
 PARTS = {p["id"]: p["name"] for p in CONTENT["parts"]}
+OPTIONAL = {p["id"] for p in CONTENT["parts"] if p.get("optional")}
+SOURCE = {x["id"]: x for x in CONTENT["sources"]}
 STEP = {s["id"]: s for s in STEPS}
 QUESTION = {q["id"]: q for q in QUESTIONS}
 SCRIPT = "exposure.py"
@@ -69,15 +71,17 @@ def save(state):
 
 # ===== logic (mirrors index.html; tools/compare_logic.mjs keeps them in step) =====
 def options_of(q, a):
-    """optionsFrom reuses the options picked in another question; the question's own options follow them."""
-    if not q.get("optionsFrom"):
+    """"above" hides the options at or below the level picked in another question, so "Have you gone further?"
+    only lists what is further."""
+    if not q.get("above"):
         return q["options"]
-    sel = a.get(q["optionsFrom"])
-    picked = []
-    if isinstance(sel, list):
-        picked = [{k: o[k] for k in ("value", "label", "level") if k in o}
-                  for o in options_of(QUESTION[q["optionsFrom"]], a) if o["value"] in sel and not o.get("exclusive")]
-    return picked + q.get("options", [])
+    source = QUESTION[q["above"]]
+    v = a.get(source["id"])
+    if v is None or v == "skip":
+        return q["options"]
+    sel = v if source.get("multi") else [v]
+    lv = max([0] + [o["level"] for o in source["options"] if o["value"] in sel and o.get("level") is not None])
+    return [o for o in q["options"] if o.get("exclusive") or o.get("level") is None or o["level"] > lv]
 
 
 def meets(c, a):
@@ -104,9 +108,9 @@ def visible(a):
 
 
 def placement(a):
-    """Options carry a level. "self" is the person's guess, "tried" the furthest thing done last month, "habit" what
-    they do most weeks. Their level is the habit (or what they tried, until that's answered); reach is the furthest
-    of both, and the risks of every level up to it apply."""
+    """Options carry a level. "habit" is what the person does most weeks, "tried" anything further they did last
+    month. Their level is the habit (or what they tried, if the habit was skipped); reach is the furthest of both,
+    and the guardrails of every level up to it apply."""
     def top(role):
         m = None
         for q in QUESTIONS:
@@ -120,11 +124,11 @@ def placement(a):
         return m
     tried, habit = top("tried"), top("habit")
     level = habit if habit is not None else tried
-    return {"self": top("self"), "tried": tried, "habit": habit, "level": level, "reach": max(tried or 0, habit or 0)}
+    return {"tried": tried, "habit": habit, "level": level, "reach": max(tried or 0, habit or 0, 0 if level is None else 1)}
 
 
 def level_no(p):
-    return None if p["level"] is None else max(1, p["level"])  # "None of these" still sits on level 1
+    return None if p["level"] is None else max(1, p["level"])  # "nothing further" alone still sits on level 1
 
 
 def placed(a):
@@ -179,20 +183,42 @@ def status_map(state):
 
 
 def current(a):
+    """The next open question. The terminal asks the optional part too, after the main check."""
     return next((q for q in visible(a) if q["id"] not in a), None)
 
 
-# Lanes: steps that need someone else → With others; on your own, 10 min or less → Minutes, longer → An evening
-LANES = [("minutes", "Minutes", "10 min or less, on your own"), ("evening", "An evening", "longer, on your own"), ("others", "With others", "needs family, your bank or a company")]
+def cover_of(lv, st):
+    """A level is covered when every essential guardrail (tier 1) in the plan at that level is in place,
+    partly covered when some are, open when none is. Level 0 is "Around you"."""
+    its = [s for s in STEPS if s["level"] == lv and not s.get("up") and s["tier"] == 1 and st.get(s["id"])]
+    ok = sum(1 for s in its if st[s["id"]] == "done")
+    return {"n": lv, "total": len(its), "ok": ok, "state": "covered" if ok == len(its) else "partly" if ok else "open"}
 
 
-def lane(s):
-    return "others" if s.get("withOthers") else "minutes" if s["minutes"] <= 10 else "evening"
+def cover(state):
+    st, p = status_map(state), placement(state["answers"])
+    levels = [cover_of(l["n"], st) for l in LEVELS if l["n"] <= p["reach"]]
+    return {"levels": levels, "covered": sum(1 for l in levels if l["state"] == "covered")}
 
 
 def order(steps):
-    rank = {k: i for i, (k, _, _) in enumerate(LANES)}
-    return sorted(steps, key=lambda s: (rank[lane(s)], -s["impact"], s["minutes"]))
+    """What to do first: an essential guardrail before anything else, then by impact, the higher level, the shorter time."""
+    return sorted(steps, key=lambda s: (s["tier"] != 1, -s["impact"], -s["level"], s["minutes"]))
+
+
+def first_step(state):
+    st, reach = status_map(state), placement(state["answers"])["reach"]
+    todo = [s for s in STEPS if st.get(s["id"]) == "todo" and not s.get("up") and 1 <= s["level"] <= reach]
+    return order(todo)[0] if todo else None
+
+
+STATE = {"covered": "Covered", "partly": "Partly covered", "open": "Open"}
+
+
+def cover_text(c):
+    if not c["total"]:
+        return "Nothing to do"
+    return f"{STATE[c['state']]} · {c['ok']} of {c['total']} {'guardrail' if c['total'] == 1 else 'guardrails'} in place"
 
 
 def fmt(m):
@@ -289,7 +315,7 @@ def probe_agents():
 
 PROBES = [
     {"id": "agents", "label": "AI tools and what they can reach", "os": ["macos", "windows", "linux"], "fn": probe_agents,
-     "steps": ["agent_inventory", "agent_confirm", "agent_revoke", "vet_skills"], "questions": ["did", "ai_assistants", "ai_reach", "approvals"]},
+     "steps": ["agent_inventory", "agent_confirm", "agent_revoke", "vet_skills"], "questions": ["ai_assistants", "ai_reach", "inventory", "approvals"]},
 ]
 
 
@@ -308,17 +334,17 @@ def status_line(state):
     a, st = state["answers"], status_map(state)
     v = visible(a)
     todo = [s for s in STEPS if st.get(s["id"]) == "todo"]
-    base = sum(s["minutes"] for s in todo if s["tier"] == 1)
     q = current(a)
     lv = level_no(placement(a)) if placed(a) else None
+    c = cover(state) if lv else None
     parts = [f"Questions {len([x for x in v if x['id'] in a])}/{len(v)}",
              f"level {lv} ({LEVELS[lv - 1]['name']})" if lv else None,
-             f"plan: {len(todo)} to do, {list(st.values()).count('done')} in place",
-             f"{fmt(base)} to baseline" if base else "baseline reached" if not q and st else None]
+             f"{c['covered']} of {len(c['levels'])} levels covered" if c else None,
+             f"plan: {len(todo)} to do, {list(st.values()).count('done')} in place"]
     if q:
         nxt = f"ask the user, then {SCRIPT} answer {q['id']} <choice>"
     elif todo:
-        s = order(todo)[0]
+        s = first_step(state) or order(todo)[0]
         nxt = f"{SCRIPT} step {s['id']} ({s['title']})"
     else:
         nxt = "nothing left. Plan complete." if st else f"{SCRIPT} next"
@@ -328,7 +354,8 @@ def status_line(state):
 def show_question(q, state):
     a, v = state["answers"], visible(state["answers"])
     opts = options_of(q, a)
-    print(f"Question {v.index(q) + 1} of {len(v)} · {PARTS[q['part']]} · id: {q['id']}")
+    where = f"Level {q['covers']} · {LEVELS[q['covers'] - 1]['name']}" if q.get("covers") else PARTS[q["part"]]
+    print(f"Question {v.index(q) + 1} of {len(v)} · {where}{' (optional)' if q['part'] in OPTIONAL else ''} · id: {q['id']}")
     print(q["text"])
     if q.get("hint"):
         print(q["hint"])
@@ -342,15 +369,6 @@ def show_question(q, state):
     print(f"Answer ({how}): {SCRIPT} answer {q['id']} <number or value> · or: {SCRIPT} answer {q['id']} skip")
 
 
-def guess_note(p):
-    n, t = level_no(p), []
-    if p["self"] is not None:
-        t.append("Same as your guess." if p["self"] == n else f"You guessed {p['self']}.")
-    if (p["tried"] or 0) > n:
-        t.append(f"You’ve tried {p['tried']}.")
-    return " ".join(t)
-
-
 def cmd_level(state, args):
     a, st = state["answers"], status_map(state)
     if not placed(a):
@@ -359,32 +377,41 @@ def cmd_level(state, args):
         return
     p = placement(a)
     n = level_no(p)
-    print(f"Level {n} of 5 · {LEVELS[n - 1]['name']}. {LEVELS[n - 1]['line']} {guess_note(p)}".rstrip())
-    print()
-    for l in LEVELS:
-        mark = "→" if l["n"] == n else "✓" if l["n"] < n else "·" if l["n"] <= p["reach"] else " "
-        print(f"  {mark} {l['n']} {l['name']:<10} {l['line']}")
-    print("  (→ your level, ✓ below it, · tried)")
+    c = cover(state)
+    tried = f" and have tried level {p['reach']}" if p["reach"] > n else ""
+    print(f"{c['covered']} of {len(c['levels'])} levels covered. You work at level {n} · {LEVELS[n - 1]['name']}{tried}.")
+    print("A level counts as covered when its essential guardrails are in place.")
     mark = lambda i: "[x]" if st.get(i) == "done" else "[ ]"
-    if n < len(LEVELS):
-        nx = LEVELS[n]
-        print(f"\nNEXT: {nx['n']} · {nx['name']}. {nx['up']}")
-        for i in nx["climb"]:
-            if st.get(i):
-                print(f"  {mark(i)} {i:<24} {STEP[i]['title']} · {effort(STEP[i])}")
-        if nx["n"] > p["reach"]:
-            print(f"  What comes with it: {nx['risk']}")
-    else:
-        print("\nTop of the scale. Nothing left to hand over; the guardrails below keep it safe.")
-    print("\nRISKS UP TO YOUR LEVEL (each level adds its own)")
-    rows = [(f"{l['n']} · {l['name']}", l["risk"], l["n"]) for l in reversed(LEVELS) if l["n"] <= p["reach"]]
-    for name, risk, lv in rows + [(AROUND["name"], AROUND["risk"], 0)]:
-        its = [s for s in STEPS if s["level"] == lv and not s.get("up") and st.get(s["id"])]
-        done = sum(1 for s in its if st[s["id"]] == "done")
-        print(f"{name}: {risk}" + (f" ({done}/{len(its)} in place)" if its else ""))
-        for s in its:
-            print(f"  {mark(s['id'])} {s['id']:<24} {s['title']}")
-    print("\nThe levels follow research on AI autonomy; which risks sit at which level is a reading of the evidence, not a measurement.")
+    for l in LEVELS:
+        mine = l["n"] <= p["reach"]
+        tag = "your level" if l["n"] == n else "tried" if mine and l["n"] > n else "next" if l["n"] == n + 1 else ""
+        head = f"\n{l['n']} · {l['name']}" + (f" ({tag})" if tag else "")
+        if not mine:
+            print(f"{head}: {l['line']}")
+            if tag == "next":
+                print(f"  To get here: {l['up']}")
+                for i in l["climb"]:
+                    if st.get(i):
+                        print(f"  {mark(i)} {i:<24} {STEP[i]['title']} · {effort(STEP[i])}")
+                print(f"  What comes with it: {l['risk']}")
+                print("  The guardrails it needs: " + "; ".join(STEP[i]["title"] for i in l["guards"] if STEP[i]["tier"] == 1))
+            continue
+        print(f"{head}: {cover_text(c['levels'][l['n'] - 1])}")
+        print(f"  Risk: {l['risk']}")
+        if l.get("case"):
+            print(f"  Case: {l['case']['text']} ({SOURCE[l['case']['src']]['url']})")
+        for s in order([s for s in STEPS if s["level"] == l["n"] and not s.get("up") and st.get(s["id"])]):
+            print(f"  {mark(s['id'])} {s['id']:<24} {s['title']}" + (" · essential" if s["tier"] == 1 else ""))
+    its = [s for s in STEPS if s["level"] == 0 and st.get(s["id"])]
+    if its:
+        ca = cover_of(0, st)
+        print(f"\n{AROUND['name']}: {AROUND['risk']} ({ca['ok']} of {ca['total']} essentials in place)")
+        for s in order(its):
+            print(f"  {mark(s['id'])} {s['id']:<24} {s['title']}" + (" · essential" if s["tier"] == 1 else ""))
+    f = first_step(state)
+    if f:
+        print(f"\nDo first: {f['id']} · {f['title']} · {effort(f)}" + (f" · {f['why']}" if f.get("why") else ""))
+    print("\nThe levels follow research on AI autonomy; which guardrail belongs to which level is a reading of the evidence, not a measurement.")
     print(status_line(state))
 
 
@@ -400,7 +427,7 @@ def cmd_next(state, args):
     if q:
         show_question(q, state)
     else:
-        print(f"Every question is answered. See the plan: {SCRIPT} plan")
+        print(f"Every question is answered. See the result: {SCRIPT} level")
     print(status_line(state))
 
 
@@ -439,36 +466,38 @@ def cmd_answer(state, args):
     if not q or q not in visible(a):
         sys.exit(f"'{args[0]}' isn't an open question. Open: {', '.join(x['id'] for x in visible(a))}")
     a[q["id"]] = parse_choice(q, " ".join(args[1:]), a)
-    # drop answers to questions whose options came from this one, if that choice is gone
+    # drop answers that named an option this answer has removed ("above")
     for x in QUESTIONS:
-        if x.get("optionsFrom") == q["id"] and x["id"] in a and a[x["id"]] != "skip" and not any(o["value"] == a[x["id"]] for o in options_of(x, a)):
-            del a[x["id"]]
+        if x.get("above") == q["id"] and x["id"] in a and a[x["id"]] != "skip":
+            ok = {o["value"] for o in options_of(x, a)}
+            kept = [v for v in (a[x["id"]] if isinstance(a[x["id"]], list) else [a[x["id"]]]) if v in ok]
+            if not kept:
+                del a[x["id"]]
+            else:
+                a[x["id"]] = kept if x.get("multi") else kept[0]
     save(state)
     st = status_map(state)
     print(f"Recorded · {q['label']}: {ans_text(q, a[q['id']], a)}")
     sel = a[q["id"]] if q.get("multi") else [a[q["id"]]]
-    notes = [o["note"] for o in options_of(q, a) if o["value"] in sel and o.get("note")]
+    notes = list(dict.fromkeys(o["note"] + (f" (source: {SOURCE[o['src']]['url']})" if o.get("src") else "")
+                               for o in options_of(q, a) if o["value"] in sel and o.get("note")))
     if q.get("place") and a[q["id"]] != "skip" and placed(a):
         p = placement(a)
         n = level_no(p)
-        print(f"Level {n} · {LEVELS[n - 1]['name']}. {LEVELS[n - 1]['line']} {guess_note(p)}".rstrip())
-        print(f"The full picture: {SCRIPT} level")
-    elif q.get("place") == "self" and a[q["id"]] != "skip":
-        print("Noted. Now what you actually do.")
-    elif q.get("place") and notes:
-        print(" ".join(notes))
+        tried = f" You've tried level {p['reach']}, so its guardrails count too." if p["reach"] > n else ""
+        print(f"Level {n} · {LEVELS[n - 1]['name']}. {LEVELS[n - 1]['line']}{tried}")
     elif a[q["id"]] != "skip" and not q.get("place"):
-        if notes:
-            print(" ".join(notes))
         add, done = effects_of(q, a[q["id"]], a)
         add = [i for i in dict.fromkeys(add) if st.get(i) == "todo"]
         done = list(dict.fromkeys(done))
-        eff = []
-        if add:
-            eff.append(f"+{len(add)} to do · {fmt(sum(STEP[i]['minutes'] for i in add))}")
         if done:
-            eff.append(f"✓ {len(done)} in place")
-        print("Effect: " + (" · ".join(eff) or "no change"))
+            print("In place: " + "; ".join(STEP[i]["title"] for i in done))
+        if add:
+            print("To do: " + "; ".join(STEP[i]["title"] for i in add))
+        for n in notes:
+            print(n)
+        if q.get("covers") and not any(x.get("covers") == q["covers"] and x["id"] not in a for x in visible(a)):
+            print(f"Level {q['covers']} · {LEVELS[q['covers'] - 1]['name']}: {cover_text(cover_of(q['covers'], st)).lower()}")
     print()
     cmd_next(state, [])
 
@@ -491,24 +520,17 @@ def cmd_plan(state, args):
         return
     todo = [s for s in STEPS if st.get(s["id"]) == "todo"]
     done = [s for s in STEPS if st.get(s["id"]) == "done"]
-    base = [s for s in todo if s["tier"] == 1]
-    total = fmt(sum(s["minutes"] for s in todo))
-    if base:
-        print(f"{fmt(sum(s['minutes'] for s in base))} to baseline · {len(base)} baseline {'step' if len(base) == 1 else 'steps'} left · everything: {total} across {len(todo)} steps")
-    else:
-        print(f"Baseline reached · {len(todo)} further steps, about {total}")
-    print(f"{len(done)} in place · {len(todo)} to do")
-    if placed(state["answers"]):
-        n = level_no(placement(state["answers"]))
-        print(f"Level {n} · {LEVELS[n - 1]['name']} (details: {SCRIPT} level)")
-    for key, name, desc in LANES:
-        items = order([s for s in todo if lane(s) == key])
-        print(f"\n{name.upper()} ({desc}) · {len(items)} {'step' if len(items) == 1 else 'steps'}")
-        for s in items:
-            tags = [effort(s), f"impact {dots(s['impact'])}"] + (["baseline"] if s["tier"] == 1 else []) + (["level up"] if s.get("up") else [])
-            print(f"  [ ] {s['id']:<24} {s['title']} · {' · '.join(tags)} · help: {'/'.join(help_kinds(s['id']))}")
+    ess = [s for s in todo if s["tier"] == 1]
+    print(f"{len(todo)} to do, about {fmt(sum(s['minutes'] for s in todo))} · {len(ess)} of them essential, about {fmt(sum(s['minutes'] for s in ess))} · {len(done)} in place")
+    groups = [(l["n"], f"{l['n']} · {l['name']}") for l in reversed(LEVELS)] + [(0, AROUND["name"])]
+    for lv, name in groups:
+        items = order([s for s in todo if s["level"] == lv])
         if not items:
-            print("  Nothing here.")
+            continue
+        print(f"\n{name.upper()}" + (f" · {cover_text(cover_of(lv, st)).lower()}" if lv and lv <= placement(state["answers"])["reach"] else ""))
+        for s in items:
+            tags = [effort(s)] + (["essential"] if s["tier"] == 1 else []) + (["level up"] if s.get("up") else []) + (["with others"] if s.get("withOthers") else [])
+            print(f"  [ ] {s['id']:<24} {s['title']} · {' · '.join(tags)} · help: {'/'.join(help_kinds(s['id']))}")
     if done:
         print(f"\nIn place ({len(done)}): " + "; ".join(s["title"] for s in done))
     print(status_line(state))
@@ -525,8 +547,10 @@ def cmd_step(state, args):
     a, st, h = state["answers"], status_map(state), ASSIST.get(args[0], {})
     status = {"todo": "in plan", "done": "done"}.get(st.get(s["id"]), "not in plan")
     print(f"Step: {s['id']} · {s['title']}")
-    print(f"{effort(s)} · impact {dots(s['impact'])} ({s['impact']} of 3)" + (" · baseline" if s["tier"] == 1 else "")
+    print(f"{effort(s)} · impact {dots(s['impact'])} ({s['impact']} of 3)" + (" · essential" if s["tier"] == 1 else "")
           + (f" · gets them to level {s['level']}" if s.get("up") else "") + f" · status: {status}")
+    if s.get("why"):
+        print(f"Why: {s['why']}")
     if h.get("how"):
         print(f"How: {h['how']}")
     for p, name in (("ios", "iPhone"), ("android", "Android")):
