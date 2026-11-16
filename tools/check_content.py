@@ -20,6 +20,7 @@ steps = {s["id"]: s for s in content["steps"]}
 levels = {l["n"] for l in content["levels"]}
 parts = {p["id"] for p in content["parts"]}
 questions = {q["id"]: q for q in content["questions"]}
+sources = {s["id"] for s in content["sources"]}
 problems = []
 
 # references
@@ -47,9 +48,33 @@ for q in content["questions"]:
         if cond and "minLevel" not in cond and cond.get("question") not in questions:
             problems.append(f"question {q['id']}: condition on unknown question {cond.get('question')}")
         if cond and "minLevel" in cond and q.get("place"):
-            problems.append(f"question {q['id']}: placement questions can't depend on the level")
-    if q.get("optionsFrom") and q["optionsFrom"] not in questions:
-        problems.append(f"question {q['id']}: options from unknown question {q['optionsFrom']}")
+            problems.append(f"question {q['id']}: the level question can't depend on the level")
+    if q.get("place") and (q.get("multi") or any("level" not in o for o in q.get("options", []))):
+        problems.append(f"question {q['id']}: the level question takes one answer and every option needs a level")
+    if "covers" in q and q["covers"] not in levels:
+        problems.append(f"question {q['id']}: covers unknown level {q['covers']}")
+    for o in q.get("options", []):
+        if o.get("src") and o["src"] not in sources:
+            problems.append(f"question {q['id']}: unknown source {o['src']}")
+        if o.get("note") and any(c.isdigit() for c in o["note"]) and not o.get("src"):
+            problems.append(f"question {q['id']}: the note on '{o['value']}' has a number but no source")
+
+if sum(1 for q in content["questions"] if q.get("place")) != 1:
+    problems.append("questions: exactly one question sets the level (place)")
+
+# every guardrail can be counted: each essential step has an answer that marks it in place
+marks_done = {sid for q in content["questions"] for o in q.get("options", []) for sid in o.get("done", [])}
+for l in content["levels"]:
+    if l.get("case") and l["case"].get("src") not in sources:
+        problems.append(f"level {l['n']}: unknown source {l['case'].get('src')}")
+    if l.get("echo") and l["echo"].get("question") not in questions:
+        problems.append(f"level {l['n']}: echo of unknown question {l['echo'].get('question')}")
+    essential = [sid for sid in l["guards"] if sid in steps and steps[sid]["tier"] == 1]
+    if not essential:
+        problems.append(f"level {l['n']}: no essential (tier 1) guardrail")
+    for sid in essential:
+        if sid not in marks_done:
+            problems.append(f"level {l['n']}: no answer marks the essential step {sid} as in place")
 
 # the skill ships its own copy of the content
 SKILL_COPY = "skills/exposure-scale/assets/content.json"
